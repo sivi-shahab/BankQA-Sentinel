@@ -1,0 +1,7 @@
+{
+  "name": "BankQA Sentinel",
+  "description": "Telemarketing Quality Control Dashboard with Multimodal Audio Analysis and AI Chat Assistant.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
