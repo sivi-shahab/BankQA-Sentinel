@@ -56,8 +56,35 @@ const analysisSchema: Schema = {
   required: ["transcriptSegments", "summary", "qualityScore", "sentiment", "nextBestActions", "complianceChecklist", "glossaryUsed"]
 };
 
-export const analyzeTelemarketingAudio = async (base64Audio: string): Promise<CallAnalysis> => {
+export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: boolean): Promise<CallAnalysis> => {
   try {
+    let systemPrompt = `You are a Senior Quality Control Auditor for a major bank. 
+            Analyze this telemarketing call recording. 
+            1. Transcribe the audio accurately using speaker diarization (identify "Agent" vs "Customer" vs "System").
+            2. Evaluate adherence to banking compliance (Verification, Disclosures, Professionalism).
+            3. Identify banking terminology used and provide a glossary context.
+            4. Suggest next best actions for the sales process.
+            5. Assign a quality score (0-100).
+    `;
+
+    if (redactPII) {
+      systemPrompt += `
+      
+      *** SECURITY GUARDRAIL ACTIVE: STRICT PII REDACTION REQUIRED ***
+      You MUST identify and redact all Personally Identifiable Information (PII) from the transcript, summary, and any other output.
+      Do NOT output real names, phone numbers, credit card numbers, account IDs, or specific addresses.
+      
+      Replacement Rules:
+      - Names -> [NAME REDACTED]
+      - Phone Numbers -> [PHONE REDACTED]
+      - Credit Card/Account Numbers -> [ACCOUNT REDACTED]
+      - Email Addresses -> [EMAIL REDACTED]
+      - Home Addresses -> [ADDRESS REDACTED]
+      
+      Ensure the redaction is applied to the "transcriptSegments" and "summary" specifically.
+      `;
+    }
+
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: {
@@ -69,14 +96,7 @@ export const analyzeTelemarketingAudio = async (base64Audio: string): Promise<Ca
             }
           },
           {
-            text: `You are a Senior Quality Control Auditor for a major bank. 
-            Analyze this telemarketing call recording. 
-            1. Transcribe the audio accurately using speaker diarization (identify "Agent" vs "Customer" vs "System").
-            2. Evaluate adherence to banking compliance (Verification, Disclosures, Professionalism).
-            3. Identify banking terminology used and provide a glossary context.
-            4. Suggest next best actions for the sales process.
-            5. Assign a quality score (0-100).
-            `
+            text: systemPrompt
           }
         ]
       },
@@ -112,6 +132,8 @@ export const sendChatQuery = async (
     
     Answer the user's questions about the call, banking regulations, or sales techniques based on this context.
     Keep answers concise and professional.
+    
+    SECURITY NOTE: If the context data has redacted PII (e.g., [NAME REDACTED]), do NOT attempt to guess the real values. Respect the redaction.
     `;
 
     const chat = ai.chats.create({

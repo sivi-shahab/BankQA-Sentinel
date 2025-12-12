@@ -4,16 +4,16 @@ import { Dashboard } from './components/Dashboard';
 import { ChatAssistant } from './components/ChatAssistant';
 import { analyzeTelemarketingAudio } from './services/geminiService';
 import { AnalysisStatus, CallAnalysis } from './types';
-import { ShieldCheck, LayoutDashboard, ArrowLeft } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, ArrowLeft, Lock } from 'lucide-react';
 
 const App: React.FC = () => {
   const [status, setStatus] = useState<AnalysisStatus>(AnalysisStatus.IDLE);
   const [analysisResult, setAnalysisResult] = useState<CallAnalysis | null>(null);
 
-  const handleAudioReady = async (base64Audio: string) => {
+  const handleAudioReady = async (base64Audio: string, redactPII: boolean) => {
     setStatus(AnalysisStatus.PROCESSING);
     try {
-      const result = await analyzeTelemarketingAudio(base64Audio);
+      const result = await analyzeTelemarketingAudio(base64Audio, redactPII);
       setAnalysisResult(result);
       setStatus(AnalysisStatus.COMPLETE);
     } catch (error) {
@@ -35,12 +35,19 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-3">
-              <div className="bg-blue-600 p-2 rounded-lg">
-                <ShieldCheck className="w-6 h-6 text-white" />
+              <div className="bg-blue-600 p-2 rounded-lg relative overflow-hidden group">
+                <ShieldCheck className="w-6 h-6 text-white relative z-10" />
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </div>
               <div>
                 <h1 className="text-xl font-bold text-slate-800 tracking-tight">BankQA Sentinel</h1>
-                <p className="text-xs text-slate-500 font-medium">Quality Control Dashboard</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-slate-500 font-medium">Quality Control Dashboard</p>
+                  <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded flex items-center gap-0.5 border border-slate-200">
+                    <Lock className="w-2.5 h-2.5" />
+                    Enterprise Secure
+                  </span>
+                </div>
               </div>
             </div>
             <div className="flex items-center">

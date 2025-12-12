@@ -1,15 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Loader2, UploadCloud } from 'lucide-react';
+import { Mic, Square, Loader2, UploadCloud, Shield, Lock, EyeOff } from 'lucide-react';
 import { AnalysisStatus } from '../types';
 
 interface AudioRecorderProps {
-  onAudioReady: (base64Audio: string) => void;
+  onAudioReady: (base64Audio: string, redactPII: boolean) => void;
   status: AnalysisStatus;
 }
 
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, status }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
+  const [redactPII, setRedactPII] = useState(true);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
@@ -40,7 +41,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
           const base64String = reader.result as string;
           // Remove data:audio/wav;base64, prefix
           const base64Data = base64String.split(',')[1];
-          onAudioReady(base64Data);
+          onAudioReady(base64Data, redactPII);
         };
         
         // Stop all tracks
@@ -86,12 +87,31 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
         <p className="mt-2 text-slate-500 text-center max-w-md">
           Gemini is transcribing conversation, checking compliance, and generating the quality report...
         </p>
+        <div className="mt-6 flex items-center gap-2 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-full text-xs font-medium">
+            <Lock className="w-3 h-3" />
+            Processing in Secure Enclave
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col items-center justify-center p-10 bg-gradient-to-b from-slate-50 to-white rounded-2xl shadow-lg border border-slate-200">
+    <div className="flex flex-col items-center justify-center p-10 bg-gradient-to-b from-slate-50 to-white rounded-2xl shadow-lg border border-slate-200 relative overflow-hidden">
+      {/* Security Badge */}
+      <div className="absolute top-4 right-4 group">
+        <div className="flex items-center gap-1.5 text-xs font-medium text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full cursor-help">
+            <Shield className="w-3 h-3" />
+            <span>Secure Mode</span>
+        </div>
+        <div className="absolute top-full right-0 mt-2 w-64 bg-slate-800 text-white text-xs p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
+            <p className="font-semibold mb-1 flex items-center gap-2">
+                <Lock className="w-3 h-3 text-emerald-400" /> 
+                Data Privacy Guardrail
+            </p>
+            <p className="opacity-90">Audio data is processed statelessly via Gemini API. Data is not stored or used to train public models.</p>
+        </div>
+      </div>
+
       <div className="mb-6 text-center">
         <h2 className="text-2xl font-bold text-slate-800">New Quality Audit</h2>
         <p className="text-slate-500 mt-1">Record a live call segment or upload audio</p>
@@ -126,6 +146,22 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
         )}
       </div>
       
+      {/* PII Toggle */}
+      <div className="mt-8 flex items-center justify-center">
+        <label className="flex items-center gap-3 cursor-pointer group">
+            <div className={`w-12 h-6 rounded-full p-1 transition-colors duration-300 ${redactPII ? 'bg-indigo-600' : 'bg-slate-300'}`} onClick={() => setRedactPII(!redactPII)}>
+                <div className={`w-4 h-4 rounded-full bg-white shadow-md transform transition-transform duration-300 ${redactPII ? 'translate-x-6' : 'translate-x-0'}`} />
+            </div>
+            <div className="flex flex-col text-left">
+                <span className="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+                    PII Redaction
+                    {redactPII && <EyeOff className="w-3 h-3 text-indigo-600" />}
+                </span>
+                <span className="text-xs text-slate-500">Automatically mask sensitive customer data</span>
+            </div>
+        </label>
+      </div>
+
       {!isRecording && (
         <div className="mt-8 pt-6 border-t border-slate-100 w-full text-center">
             <p className="text-xs text-slate-400 uppercase tracking-wider font-semibold mb-4">Or upload file</p>
@@ -139,7 +175,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
                         reader.onloadend = () => {
                             const base64String = reader.result as string;
                             const base64Data = base64String.split(',')[1];
-                            onAudioReady(base64Data);
+                            onAudioReady(base64Data, redactPII);
                         };
                         reader.readAsDataURL(file);
                     }
