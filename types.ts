@@ -15,6 +15,16 @@ export interface TranscriptSegment {
   text: string;
 }
 
+export interface ExtractedInfo {
+  productName: string;
+  customerName: string;
+  parentName: string; // Nama Orang Tua / Ibu Kandung
+  identityNumber: string; // NIK
+  contributionAmount: string; // Iuran / Premi
+  contactInfo: string;
+  otherDetails: string;
+}
+
 export interface CallAnalysis {
   transcriptSegments: TranscriptSegment[];
   summary: string;
@@ -23,6 +33,7 @@ export interface CallAnalysis {
   nextBestActions: string[];
   complianceChecklist: ComplianceItem[];
   glossaryUsed: GlossaryTerm[];
+  extractedInfo: ExtractedInfo;
 }
 
 export interface ChatMessage {

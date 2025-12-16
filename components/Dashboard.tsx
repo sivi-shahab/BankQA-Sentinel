@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   CheckCircle, AlertTriangle, XCircle, 
   TrendingUp, TrendingDown, Minus,
-  BookOpen, Activity, FileText, Zap, User, Headset
+  BookOpen, Activity, FileText, Zap, User, Headset, ClipboardList, CreditCard
 } from 'lucide-react';
 import { CallAnalysis } from '../types';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts';
@@ -148,9 +148,75 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Actions & Glossary */}
+      {/* RIGHT COLUMN: Extracted Data, Actions & Glossary */}
       <div className="space-y-6">
         
+        {/* Customer Data Form - NEW */}
+        <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 border-t-4 border-t-indigo-600">
+            <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
+                <ClipboardList className="w-5 h-5 text-indigo-600" />
+                <h3 className="text-lg font-semibold text-slate-800">Customer Data Form</h3>
+            </div>
+            <div className="space-y-4">
+                
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Product</label>
+                    <div className="flex items-center gap-2 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                        <CreditCard className="w-4 h-4 text-slate-400" />
+                        <span className="text-sm font-medium text-slate-900">{data.extractedInfo?.productName || 'Not Mentioned'}</span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Customer Name</label>
+                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-900">
+                            {data.extractedInfo?.customerName || 'Not Mentioned'}
+                        </div>
+                    </div>
+                    <div>
+                         <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Identity Number (NIK)</label>
+                         <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-900 font-mono">
+                            {data.extractedInfo?.identityNumber || 'Not Mentioned'}
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Mother's Maiden Name</label>
+                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-sm font-medium text-slate-900">
+                        {data.extractedInfo?.parentName || 'Not Mentioned'}
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Contribution / Fee</label>
+                    <div className="bg-emerald-50 p-2.5 rounded-lg border border-emerald-100 text-sm font-bold text-emerald-800">
+                        {data.extractedInfo?.contributionAmount || 'Not Mentioned'}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                     <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Contact Info</label>
+                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200 text-sm text-slate-700">
+                            {data.extractedInfo?.contactInfo || 'Not Mentioned'}
+                        </div>
+                    </div>
+                </div>
+                 
+                 {data.extractedInfo?.otherDetails && data.extractedInfo.otherDetails !== 'Not Mentioned' && (
+                    <div className="pt-2 border-t border-slate-100">
+                        <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Additional Notes</label>
+                        <p className="text-xs text-slate-600 bg-yellow-50 p-2 rounded border border-yellow-100">
+                            {data.extractedInfo.otherDetails}
+                        </p>
+                    </div>
+                 )}
+
+            </div>
+        </div>
+
         {/* Next Best Action */}
         <div className="bg-gradient-to-br from-indigo-600 to-blue-700 p-6 rounded-xl shadow-lg text-white">
             <div className="flex items-center gap-2 mb-4">

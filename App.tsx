@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { AudioRecorder } from './components/AudioRecorder';
 import { Dashboard } from './components/Dashboard';
 import { ChatAssistant } from './components/ChatAssistant';
+import { Login } from './components/Login';
 import { analyzeTelemarketingAudio } from './services/geminiService';
 import { AnalysisStatus, CallAnalysis } from './types';
-import { ShieldCheck, LayoutDashboard, ArrowLeft, Lock } from 'lucide-react';
+import { ShieldCheck, LayoutDashboard, ArrowLeft, Lock, LogOut } from 'lucide-react';
 
 const App: React.FC = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [status, setStatus] = useState<AnalysisStatus>(AnalysisStatus.IDLE);
   const [analysisResult, setAnalysisResult] = useState<CallAnalysis | null>(null);
 
@@ -27,6 +29,15 @@ const App: React.FC = () => {
     setStatus(AnalysisStatus.IDLE);
     setAnalysisResult(null);
   };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    handleReset();
+  };
+
+  if (!isAuthenticated) {
+    return <Login onLogin={() => setIsAuthenticated(true)} />;
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-24">
@@ -50,7 +61,7 @@ const App: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="flex items-center">
+            <div className="flex items-center gap-4">
               {status === AnalysisStatus.COMPLETE && (
                 <button 
                   onClick={handleReset}
@@ -60,6 +71,14 @@ const App: React.FC = () => {
                   New Analysis
                 </button>
               )}
+              <div className="h-6 w-px bg-slate-200"></div>
+              <button 
+                onClick={handleLogout}
+                className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-red-600 px-3 py-2 rounded-md transition-colors"
+                title="Sign Out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>

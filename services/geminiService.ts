@@ -51,9 +51,23 @@ const analysisSchema: Schema = {
         required: ["term", "definition", "contextInCall"]
       },
       description: "Banking specific terms detected in the call with definitions."
+    },
+    extractedInfo: {
+      type: Type.OBJECT,
+      properties: {
+        productName: { type: Type.STRING, description: "Name of the banking product/service discussed (e.g. Credit Card, Loan, Insurance)" },
+        customerName: { type: Type.STRING, description: "Full name of the customer" },
+        parentName: { type: Type.STRING, description: "Mother's maiden name or parent name if mentioned for verification" },
+        identityNumber: { type: Type.STRING, description: "NIK, KTP, or ID number if mentioned" },
+        contributionAmount: { type: Type.STRING, description: "Monthly fee, premium (iuran), or contribution amount discussed" },
+        contactInfo: { type: Type.STRING, description: "Phone number, email, or address mentioned" },
+        otherDetails: { type: Type.STRING, description: "Any other critical data points (e.g., Date of Birth, Job)" }
+      },
+      required: ["productName", "customerName", "parentName", "identityNumber", "contributionAmount", "contactInfo", "otherDetails"],
+      description: "Key data points extracted from the conversation to fill a CRM form."
     }
   },
-  required: ["transcriptSegments", "summary", "qualityScore", "sentiment", "nextBestActions", "complianceChecklist", "glossaryUsed"]
+  required: ["transcriptSegments", "summary", "qualityScore", "sentiment", "nextBestActions", "complianceChecklist", "glossaryUsed", "extractedInfo"]
 };
 
 export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: boolean): Promise<CallAnalysis> => {
@@ -65,6 +79,7 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
             3. Identify banking terminology used and provide a glossary context.
             4. Suggest next best actions for the sales process.
             5. Assign a quality score (0-100).
+            6. EXTRACT KEY DATA: Fill out the 'extractedInfo' object with specific details found in the conversation. Use "Not Mentioned" if the data is not found.
     `;
 
     if (redactPII) {
@@ -81,7 +96,7 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
       - Email Addresses -> [EMAIL REDACTED]
       - Home Addresses -> [ADDRESS REDACTED]
       
-      Ensure the redaction is applied to the "transcriptSegments" and "summary" specifically.
+      IMPORTANT: Even for the 'extractedInfo' object, if PII redaction is ON, you must use the redacted placeholders (e.g., [NAME REDACTED]) instead of the real values.
       `;
     }
 
