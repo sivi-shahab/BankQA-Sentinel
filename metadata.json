@@ -1,6 +1,6 @@
 {
-  "name": "BankQA Sentinel",
-  "description": "Telemarketing Quality Control Dashboard with Multimodal Audio Analysis and AI Chat Assistant.",
+  "name": "OmniAssure FinAI",
+  "description": "Enterprise Telemarketing Quality Control & Performance Intelligence for Banking.",
   "requestFramePermissions": [
     "microphone"
   ]

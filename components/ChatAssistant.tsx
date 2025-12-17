@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, X, Bot, User, BookText } from 'lucide-react';
 import { CallAnalysis, ChatMessage } from '../types';
@@ -15,7 +16,7 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ contextData, refer
     {
       id: 'welcome',
       role: 'model',
-      text: 'Hello. I am your Quality Control Assistant. Ask me anything about this call analysis.',
+      text: 'OmniAssure AI active. Ready for deep context analysis. How can I assist with this session?',
       timestamp: new Date()
     }
   ]);
@@ -87,10 +88,9 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ contextData, refer
       <div className="bg-indigo-600 p-4 rounded-t-2xl flex items-center justify-between">
         <div className="flex items-center gap-2 text-white">
           <Bot className="w-5 h-5" />
-          <h3 className="font-semibold">QC Assistant</h3>
+          <h3 className="font-semibold text-sm">OmniAssure Analyst</h3>
           {referenceText && (
-            <span className="flex items-center gap-1 text-[10px] bg-indigo-500/50 px-2 py-0.5 rounded-full border border-indigo-400">
-                <BookText className="w-3 h-3" />
+            <span className="flex items-center gap-1 text-[10px] bg-indigo-500/50 px-2 py-0.5 rounded-full border border-indigo-400 font-bold uppercase tracking-widest">
                 RAG Active
             </span>
           )}
@@ -110,11 +110,11 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ contextData, refer
             <div
               className={`max-w-[80%] rounded-xl p-3 text-sm ${
                 msg.role === 'user'
-                  ? 'bg-indigo-600 text-white rounded-tr-none'
+                  ? 'bg-indigo-600 text-white rounded-tr-none shadow-md'
                   : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none shadow-sm'
               }`}
             >
-              <p>{msg.text}</p>
+              <p className="leading-relaxed">{msg.text}</p>
             </div>
           </div>
         ))}
@@ -140,7 +140,7 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ contextData, refer
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder={referenceText ? "Ask using reference doc..." : "Ask about compliance..."}
+            placeholder={referenceText ? "Query using RAG context..." : "Ask about compliance stats..."}
             className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
           />
           <button
