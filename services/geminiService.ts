@@ -55,16 +55,26 @@ const analysisSchema: Schema = {
     extractedInfo: {
       type: Type.OBJECT,
       properties: {
-        productName: { type: Type.STRING, description: "Name of the banking product/service discussed (e.g. Credit Card, Loan, Insurance)" },
-        customerName: { type: Type.STRING, description: "Full name of the customer" },
-        parentName: { type: Type.STRING, description: "Mother's maiden name or parent name if mentioned for verification" },
-        identityNumber: { type: Type.STRING, description: "NIK, KTP, or ID number if mentioned" },
-        contributionAmount: { type: Type.STRING, description: "Monthly fee, premium (iuran), or contribution amount discussed" },
-        contactInfo: { type: Type.STRING, description: "Phone number, email, or address mentioned" },
-        otherDetails: { type: Type.STRING, description: "Any other critical data points (e.g., Date of Birth, Job)" }
+        productName: { type: Type.STRING, description: "Nama produk perbankan" },
+        customerName: { type: Type.STRING, description: "Nama lengkap nasabah" },
+        dateOfBirth: { type: Type.STRING, description: "Tanggal lahir nasabah" },
+        identityNumber: { type: Type.STRING, description: "Nomor identitas (NIK/KTP)" },
+        motherMaidenName: { type: Type.STRING, description: "Nama gadis ibu kandung" },
+        bankAccountNumber: { type: Type.STRING, description: "Nomor rekening bank tujuan transfer" },
+        targetBankName: { type: Type.STRING, description: "Nama bank tujuan transfer" },
+        contributionAmount: { type: Type.STRING, description: "Nilai kontribusi/premi/biaya" },
+        phoneNumber: { type: Type.STRING, description: "Nomor telepon aktif" },
+        emailAddress: { type: Type.STRING, description: "Alamat email" },
+        occupation: { type: Type.STRING, description: "Pekerjaan nasabah" },
+        residentialAddress: { type: Type.STRING, description: "Alamat lengkap tempat tinggal" }
       },
-      required: ["productName", "customerName", "parentName", "identityNumber", "contributionAmount", "contactInfo", "otherDetails"],
-      description: "Key data points extracted from the conversation to fill a CRM form."
+      required: [
+        "productName", "customerName", "dateOfBirth", "identityNumber", 
+        "motherMaidenName", "bankAccountNumber", "targetBankName", 
+        "contributionAmount", "phoneNumber", "emailAddress", 
+        "occupation", "residentialAddress"
+      ],
+      description: "Detailed CRM data points extracted individually from the conversation."
     },
     conversationStats: {
       type: Type.OBJECT,
@@ -86,28 +96,24 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
   try {
     let systemPrompt = `You are a Senior Quality Control Auditor for a major bank. 
             Analyze this telemarketing call recording. 
-            1. Transcribe the audio accurately using speaker diarization (identify "Agent" vs "Customer" vs "System").
-            2. Evaluate adherence to banking compliance (Verification, Disclosures, Professionalism).
-            3. Identify banking terminology used and provide a glossary context.
-            4. Suggest next best actions for the sales process.
+            1. Transcribe the audio accurately using speaker diarization.
+            2. Evaluate adherence to banking compliance.
+            3. Identify banking terminology.
+            4. Suggest next best actions.
             5. Assign a quality score (0-100).
-            6. EXTRACT KEY DATA: Fill out the 'extractedInfo' object.
-            7. ANALYZE CONVERSATION FLOW: Calculate approximate talk ratios (Share of Voice). Ideally, a consultative sales call should be around 40-60% Agent / 40-60% Customer. If the Agent talks > 70%, it is "AGENT_DOMINATED".
+            6. EXTRACT KEY DATA: Identify specific fields in the 'extractedInfo' object. If a field is not mentioned, use "Tidak disebutkan".
+            7. ANALYZE CONVERSATION FLOW: Calculate talk ratios.
     `;
 
     if (referenceText) {
         systemPrompt += `
         
         *** REFERENCE DOCUMENT / KNOWLEDGE BASE PROVIDED ***
-        The user has provided a reference document (Script, SOP, or Product Manual).
         Use the content below to evaluate the agent's performance strictly against these guidelines.
         
         [REFERENCE START]
         ${referenceText}
         [REFERENCE END]
-        
-        - If the agent misses steps mentioned in the Reference Document, mark them as FAIL in the compliance checklist.
-        - Use product details from the Reference Document to verify accuracy of information given to the customer.
         `;
     }
 
@@ -115,17 +121,9 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
       systemPrompt += `
       
       *** SECURITY GUARDRAIL ACTIVE: STRICT PII REDACTION REQUIRED ***
-      You MUST identify and redact all Personally Identifiable Information (PII) from the transcript, summary, and any other output.
-      Do NOT output real names, phone numbers, credit card numbers, account IDs, or specific addresses.
-      
-      Replacement Rules:
-      - Names -> [NAME REDACTED]
-      - Phone Numbers -> [PHONE REDACTED]
-      - Credit Card/Account Numbers -> [ACCOUNT REDACTED]
-      - Email Addresses -> [EMAIL REDACTED]
-      - Home Addresses -> [ADDRESS REDACTED]
-      
-      IMPORTANT: Even for the 'extractedInfo' object, if PII redaction is ON, you must use the redacted placeholders (e.g., [NAME REDACTED]) instead of the real values.
+      You MUST identify and redact all Personally Identifiable Information (PII).
+      Replace real values with placeholders like [NAME REDACTED], [PHONE REDACTED], [ACCOUNT REDACTED], [DOB REDACTED], etc.
+      Even in the 'extractedInfo' JSON object, use these redacted placeholders if redaction is ON.
       `;
     }
 
@@ -135,7 +133,7 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
         parts: [
           {
             inlineData: {
-              mimeType: 'audio/wav', // Assuming WAV from MediaRecorder, Gemini is flexible
+              mimeType: 'audio/wav',
               data: base64Audio
             }
           },
@@ -147,7 +145,7 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
       config: {
         responseMimeType: "application/json",
         responseSchema: analysisSchema,
-        temperature: 0.2, // Lower temperature for more analytical/factual output
+        temperature: 0.1,
       }
     });
 
@@ -177,16 +175,13 @@ export const sendChatQuery = async (
     
     Answer the user's questions about the call, banking regulations, or sales techniques based on this context.
     Keep answers concise and professional.
-    
-    SECURITY NOTE: If the context data has redacted PII (e.g., [NAME REDACTED]), do NOT attempt to guess the real values. Respect the redaction.
     `;
 
     if (referenceText) {
         systemInstruction += `
         
         *** REFERENCE KNOWLEDGE BASE ***
-        The user has uploaded the following reference document (Script/Policy/Product Info).
-        Use this information to answer questions about what the agent *should* have said vs what they *did* say.
+        The user has uploaded a reference document. Use it for context.
         
         [REFERENCE DOCUMENT]
         ${referenceText}

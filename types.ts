@@ -18,11 +18,16 @@ export interface TranscriptSegment {
 export interface ExtractedInfo {
   productName: string;
   customerName: string;
-  parentName: string;
+  dateOfBirth: string;
   identityNumber: string;
+  motherMaidenName: string;
+  bankAccountNumber: string;
+  targetBankName: string;
   contributionAmount: string;
-  contactInfo: string;
-  otherDetails: string;
+  phoneNumber: string;
+  emailAddress: string;
+  occupation: string;
+  residentialAddress: string;
 }
 
 export interface ConversationStats {

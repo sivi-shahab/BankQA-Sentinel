@@ -4,7 +4,8 @@ import {
   TrendingUp, TrendingDown, Minus,
   Activity, FileText, Zap, User, Headset, 
   ClipboardList, CreditCard, Clock, BarChart3, 
-  Mic, Users, Sparkles
+  Mic, Users, Sparkles, Calendar, Landmark, 
+  Phone, Mail, Briefcase, MapPin, Hash, Heart
 } from 'lucide-react';
 import { CallAnalysis } from '../types';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts';
@@ -24,8 +25,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     { name: 'Score', value: data.qualityScore, fill: getScoreColor(data.qualityScore) }
   ];
 
+  const crmFields = [
+    { label: 'Full Name', value: data.extractedInfo.customerName, icon: User, color: 'text-indigo-600' },
+    { label: 'Date of Birth', value: data.extractedInfo.dateOfBirth, icon: Calendar, color: 'text-rose-500' },
+    { label: 'ID Number (NIK)', value: data.extractedInfo.identityNumber, icon: Hash, color: 'text-slate-600' },
+    { label: "Mother's Maiden Name", value: data.extractedInfo.motherMaidenName, icon: Heart, color: 'text-pink-500' },
+    { label: 'Target Account No.', value: data.extractedInfo.bankAccountNumber, icon: CreditCard, color: 'text-amber-600' },
+    { label: 'Target Bank', value: data.extractedInfo.targetBankName, icon: Landmark, color: 'text-blue-600' },
+    { label: 'Phone Number', value: data.extractedInfo.phoneNumber, icon: Phone, color: 'text-emerald-600' },
+    { label: 'Email Address', value: data.extractedInfo.emailAddress, icon: Mail, color: 'text-cyan-600' },
+    { label: 'Occupation', value: data.extractedInfo.occupation, icon: Briefcase, color: 'text-violet-600' },
+    { label: 'Residential Address', value: data.extractedInfo.residentialAddress, icon: MapPin, color: 'text-orange-600' },
+  ];
+
   return (
-    <div className="space-y-6 animate-fade-in font-sans">
+    <div className="space-y-6 animate-fade-in font-sans pb-10">
       
       {/* 1. HERO SECTION: High-Level KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -98,7 +112,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         {/* 2. LEFT COLUMN: Analytics & Compliance */}
         <div className="lg:col-span-2 space-y-6">
             
-            {/* Talk Time Effectiveness - NEW FEATURE */}
+            {/* Talk Time Effectiveness */}
             <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
@@ -119,7 +133,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                     </div>
                 </div>
 
-                {/* Progress Bar Visualizer */}
                 <div className="mb-6">
                     <div className="flex justify-between text-sm font-semibold mb-2">
                         <span className="text-blue-600 flex items-center gap-1"><Headset className="w-4 h-4" /> Agent: {Math.round(data.conversationStats.agentTalkTimePct)}%</span>
@@ -132,7 +145,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                         >
                             <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         </div>
-                        {/* The rest is implicitly green (emerald-100) */}
                     </div>
                     <div className="flex justify-between text-[10px] text-slate-400 mt-1 px-1">
                         <span>Target: &lt;60%</span>
@@ -140,7 +152,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                     </div>
                 </div>
 
-                {/* Analysis Feedback */}
                 <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex gap-3">
                     <BarChart3 className="w-5 h-5 text-slate-400 mt-0.5" />
                     <div>
@@ -224,48 +235,50 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         {/* 3. RIGHT COLUMN: CRM Data & Coaching */}
         <div className="space-y-6">
             
-            {/* Automated CRM Entry */}
+            {/* Automated CRM Entry - UPDATED FOR GRANULAR FIELDS */}
             <div className="bg-white rounded-2xl p-0 shadow-lg border border-slate-200 overflow-hidden">
-                <div className="bg-slate-900 p-4 flex items-center gap-3">
-                    <ClipboardList className="w-5 h-5 text-indigo-400" />
-                    <h3 className="text-white font-bold">Auto-Captured Data</h3>
+                <div className="bg-slate-900 p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <ClipboardList className="w-5 h-5 text-indigo-400" />
+                        <h3 className="text-white font-bold">Auto-Captured Data</h3>
+                    </div>
+                    <span className="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded-full border border-indigo-500/30 uppercase font-black">AI Verified</span>
                 </div>
                 <div className="p-6 space-y-4">
-                    {/* Product Highilght */}
+                    {/* Product Highlight */}
                     <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                        <label className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Product Interest</label>
+                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Active Product Offering</label>
                         <div className="flex items-center gap-2 mt-1">
-                            <CreditCard className="w-5 h-5 text-indigo-600" />
-                            <span className="text-lg font-bold text-indigo-900">{data.extractedInfo?.productName || 'N/A'}</span>
+                            <Zap className="w-4 h-4 text-indigo-600" />
+                            <span className="text-lg font-black text-indigo-900 tracking-tight">{data.extractedInfo?.productName || 'N/A'}</span>
+                        </div>
+                        <div className="mt-2 text-xs font-bold text-emerald-600 flex items-center gap-1">
+                             <TrendingUp className="w-3 h-3" /> Potential: {data.extractedInfo?.contributionAmount || 'N/A'}
                         </div>
                     </div>
 
-                    <div className="space-y-3">
-                        <div className="group">
-                            <label className="text-xs font-bold text-slate-400 uppercase group-hover:text-indigo-500 transition-colors">Customer Name</label>
-                            <div className="font-medium text-slate-800 border-b border-slate-100 pb-1">{data.extractedInfo?.customerName || '-'}</div>
-                        </div>
-                        <div className="group">
-                            <label className="text-xs font-bold text-slate-400 uppercase group-hover:text-indigo-500 transition-colors">Identity (NIK)</label>
-                            <div className="font-mono text-slate-600 border-b border-slate-100 pb-1">{data.extractedInfo?.identityNumber || '-'}</div>
-                        </div>
-                        <div className="group">
-                            <label className="text-xs font-bold text-slate-400 uppercase group-hover:text-indigo-500 transition-colors">Mother's Name</label>
-                            <div className="font-medium text-slate-800 border-b border-slate-100 pb-1">{data.extractedInfo?.parentName || '-'}</div>
-                        </div>
-                        <div className="group">
-                            <label className="text-xs font-bold text-slate-400 uppercase group-hover:text-indigo-500 transition-colors">Agreed Contribution</label>
-                            <div className="font-bold text-emerald-600 text-lg">{data.extractedInfo?.contributionAmount || '-'}</div>
-                        </div>
-                        <div className="group">
-                             <label className="text-xs font-bold text-slate-400 uppercase group-hover:text-indigo-500 transition-colors">Contact</label>
-                             <div className="text-sm text-slate-600">{data.extractedInfo?.contactInfo || '-'}</div>
-                        </div>
+                    {/* Detailed Fields - 1 Data 1 Field */}
+                    <div className="grid grid-cols-1 gap-4 mt-4">
+                        {crmFields.map((field, idx) => (
+                            <div key={idx} className="group flex items-start gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                                <div className={`mt-1 p-1.5 rounded-lg bg-white border border-slate-100 shadow-sm ${field.color}`}>
+                                    <field.icon className="w-3.5 h-3.5" />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 group-hover:text-indigo-500 transition-colors">
+                                        {field.label}
+                                    </label>
+                                    <div className={`text-sm font-bold tracking-tight ${field.value === 'Tidak disebutkan' ? 'text-slate-300 italic font-normal' : 'text-slate-800'}`}>
+                                        {field.value}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
-                <div className="bg-slate-50 p-3 text-center border-t border-slate-100">
-                    <button className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center justify-center gap-1 w-full">
-                        Export to CRM <Users className="w-3 h-3" />
+                <div className="bg-slate-50 p-4 text-center border-t border-slate-100">
+                    <button className="text-xs font-black text-indigo-600 hover:text-indigo-700 flex items-center justify-center gap-2 w-full uppercase tracking-widest">
+                        Commit to Enterprise CRM <Users className="w-4 h-4" />
                     </button>
                 </div>
             </div>
@@ -277,8 +290,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                 </div>
                 <div className="relative z-10">
                     <div className="flex items-center gap-2 mb-4">
-                        <Zap className="w-5 h-5 text-yellow-300" />
-                        <h3 className="text-lg font-bold">Coaching Opportunities</h3>
+                        <Sparkles className="w-5 h-5 text-yellow-300" />
+                        <h3 className="text-lg font-bold">Coaching Points</h3>
                     </div>
                     <ul className="space-y-4">
                         {data.nextBestActions.map((action, idx) => (
@@ -305,7 +318,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                                 <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-100 cursor-help hover:bg-indigo-100 transition-colors">
                                     {term.term}
                                 </span>
-                                {/* Tooltip */}
                                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-800 text-white text-xs p-2 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
                                     <p className="font-semibold mb-1">{term.definition}</p>
                                     <p className="opacity-70 italic">"{term.contextInCall}"</p>
