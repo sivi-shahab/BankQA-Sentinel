@@ -18,11 +18,20 @@ export interface TranscriptSegment {
 export interface ExtractedInfo {
   productName: string;
   customerName: string;
-  parentName: string; // Nama Orang Tua / Ibu Kandung
-  identityNumber: string; // NIK
-  contributionAmount: string; // Iuran / Premi
+  parentName: string;
+  identityNumber: string;
+  contributionAmount: string;
   contactInfo: string;
   otherDetails: string;
+}
+
+export interface ConversationStats {
+  agentTalkTimePct: number; // e.g. 60
+  customerTalkTimePct: number; // e.g. 40
+  wordsPerMinute: number; // Estimated pace
+  interruptionCount: number;
+  effectivenessRating: 'OPTIMAL' | 'AGENT_DOMINATED' | 'CUSTOMER_DOMINATED';
+  feedback: string;
 }
 
 export interface CallAnalysis {
@@ -34,6 +43,7 @@ export interface CallAnalysis {
   complianceChecklist: ComplianceItem[];
   glossaryUsed: GlossaryTerm[];
   extractedInfo: ExtractedInfo;
+  conversationStats: ConversationStats;
 }
 
 export interface ChatMessage {

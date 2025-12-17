@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, X, Bot, User } from 'lucide-react';
+import { MessageCircle, Send, X, Bot, User, BookText } from 'lucide-react';
 import { CallAnalysis, ChatMessage } from '../types';
 import { sendChatQuery } from '../services/geminiService';
 
 interface ChatAssistantProps {
   contextData: CallAnalysis | null;
+  referenceText: string;
 }
 
-export const ChatAssistant: React.FC<ChatAssistantProps> = ({ contextData }) => {
+export const ChatAssistant: React.FC<ChatAssistantProps> = ({ contextData, referenceText }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -45,7 +46,7 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ contextData }) => 
 
     try {
       const history = messages.map(m => ({ role: m.role, text: m.text }));
-      const responseText = await sendChatQuery(history, userMsg.text, contextData || undefined);
+      const responseText = await sendChatQuery(history, userMsg.text, contextData || undefined, referenceText);
 
       const botMsg: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -73,6 +74,9 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ contextData }) => 
         className="fixed bottom-6 right-6 h-14 w-14 bg-indigo-600 text-white rounded-full shadow-lg hover:bg-indigo-700 transition-all duration-300 flex items-center justify-center z-50 hover:scale-110"
       >
         <MessageCircle className="w-7 h-7" />
+        {referenceText && (
+            <span className="absolute top-0 right-0 -mt-1 -mr-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white"></span>
+        )}
       </button>
     );
   }
@@ -84,6 +88,12 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ contextData }) => 
         <div className="flex items-center gap-2 text-white">
           <Bot className="w-5 h-5" />
           <h3 className="font-semibold">QC Assistant</h3>
+          {referenceText && (
+            <span className="flex items-center gap-1 text-[10px] bg-indigo-500/50 px-2 py-0.5 rounded-full border border-indigo-400">
+                <BookText className="w-3 h-3" />
+                RAG Active
+            </span>
+          )}
         </div>
         <button onClick={() => setIsOpen(false)} className="text-indigo-100 hover:text-white">
           <X className="w-5 h-5" />
@@ -130,7 +140,7 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ contextData }) => 
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Ask about compliance, glossary..."
+            placeholder={referenceText ? "Ask using reference doc..." : "Ask about compliance..."}
             className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
           />
           <button

@@ -65,12 +65,24 @@ const analysisSchema: Schema = {
       },
       required: ["productName", "customerName", "parentName", "identityNumber", "contributionAmount", "contactInfo", "otherDetails"],
       description: "Key data points extracted from the conversation to fill a CRM form."
+    },
+    conversationStats: {
+      type: Type.OBJECT,
+      properties: {
+        agentTalkTimePct: { type: Type.NUMBER, description: "Percentage of total conversation time spoken by the Agent (0-100)" },
+        customerTalkTimePct: { type: Type.NUMBER, description: "Percentage of total conversation time spoken by the Customer (0-100)" },
+        wordsPerMinute: { type: Type.NUMBER, description: "Estimated speaking pace" },
+        interruptionCount: { type: Type.NUMBER, description: "Number of times speakers interrupted each other" },
+        effectivenessRating: { type: Type.STRING, enum: ['OPTIMAL', 'AGENT_DOMINATED', 'CUSTOMER_DOMINATED'], description: "Rating of the talk-time balance" },
+        feedback: { type: Type.STRING, description: "Advice on how to improve the conversation flow based on duration stats." }
+      },
+      required: ["agentTalkTimePct", "customerTalkTimePct", "wordsPerMinute", "interruptionCount", "effectivenessRating", "feedback"]
     }
   },
-  required: ["transcriptSegments", "summary", "qualityScore", "sentiment", "nextBestActions", "complianceChecklist", "glossaryUsed", "extractedInfo"]
+  required: ["transcriptSegments", "summary", "qualityScore", "sentiment", "nextBestActions", "complianceChecklist", "glossaryUsed", "extractedInfo", "conversationStats"]
 };
 
-export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: boolean): Promise<CallAnalysis> => {
+export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: boolean, referenceText: string = ''): Promise<CallAnalysis> => {
   try {
     let systemPrompt = `You are a Senior Quality Control Auditor for a major bank. 
             Analyze this telemarketing call recording. 
@@ -79,8 +91,25 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
             3. Identify banking terminology used and provide a glossary context.
             4. Suggest next best actions for the sales process.
             5. Assign a quality score (0-100).
-            6. EXTRACT KEY DATA: Fill out the 'extractedInfo' object with specific details found in the conversation. Use "Not Mentioned" if the data is not found.
+            6. EXTRACT KEY DATA: Fill out the 'extractedInfo' object.
+            7. ANALYZE CONVERSATION FLOW: Calculate approximate talk ratios (Share of Voice). Ideally, a consultative sales call should be around 40-60% Agent / 40-60% Customer. If the Agent talks > 70%, it is "AGENT_DOMINATED".
     `;
+
+    if (referenceText) {
+        systemPrompt += `
+        
+        *** REFERENCE DOCUMENT / KNOWLEDGE BASE PROVIDED ***
+        The user has provided a reference document (Script, SOP, or Product Manual).
+        Use the content below to evaluate the agent's performance strictly against these guidelines.
+        
+        [REFERENCE START]
+        ${referenceText}
+        [REFERENCE END]
+        
+        - If the agent misses steps mentioned in the Reference Document, mark them as FAIL in the compliance checklist.
+        - Use product details from the Reference Document to verify accuracy of information given to the customer.
+        `;
+    }
 
     if (redactPII) {
       systemPrompt += `
@@ -136,13 +165,14 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
 export const sendChatQuery = async (
   history: { role: 'user' | 'model'; text: string }[],
   currentMessage: string,
-  contextData?: CallAnalysis
+  contextData?: CallAnalysis,
+  referenceText: string = ''
 ): Promise<string> => {
   try {
-    const systemInstruction = `You are an AI Assistant for a Banking Quality Control Dashboard.
+    let systemInstruction = `You are an AI Assistant for a Banking Quality Control Dashboard.
     You have access to the analysis of a specific telemarketing call.
     
-    Context Data:
+    Context Data (Analysis Result):
     ${contextData ? JSON.stringify(contextData) : 'No specific call context loaded yet.'}
     
     Answer the user's questions about the call, banking regulations, or sales techniques based on this context.
@@ -150,6 +180,18 @@ export const sendChatQuery = async (
     
     SECURITY NOTE: If the context data has redacted PII (e.g., [NAME REDACTED]), do NOT attempt to guess the real values. Respect the redaction.
     `;
+
+    if (referenceText) {
+        systemInstruction += `
+        
+        *** REFERENCE KNOWLEDGE BASE ***
+        The user has uploaded the following reference document (Script/Policy/Product Info).
+        Use this information to answer questions about what the agent *should* have said vs what they *did* say.
+        
+        [REFERENCE DOCUMENT]
+        ${referenceText}
+        `;
+    }
 
     const chat = ai.chats.create({
       model: 'gemini-3-pro-preview',
