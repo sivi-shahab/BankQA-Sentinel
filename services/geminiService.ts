@@ -1,10 +1,13 @@
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+
+// Always use import {GoogleGenAI} from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { CallAnalysis } from "../types";
 
-// Initialize Gemini Client
+// Always initialize with named parameter apiKey.
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
-const analysisSchema: Schema = {
+// Schema definition following Type documentation.
+const analysisSchema = {
   type: Type.OBJECT,
   properties: {
     transcriptSegments: {
@@ -87,11 +90,26 @@ const analysisSchema: Schema = {
         feedback: { type: Type.STRING, description: "Advice on how to improve the conversation flow based on duration stats." }
       },
       required: ["agentTalkTimePct", "customerTalkTimePct", "wordsPerMinute", "interruptionCount", "effectivenessRating", "feedback"]
+    },
+    agentPerformance: {
+      type: Type.OBJECT,
+      properties: {
+        empathyScore: { type: Type.NUMBER, description: "Ability to connect with customer emotions (0-100)" },
+        clarityScore: { type: Type.NUMBER, description: "Ability to explain product details clearly (0-100)" },
+        persuasionScore: { type: Type.NUMBER, description: "Ability to handle objections and close (0-100)" },
+        productKnowledgeScore: { type: Type.NUMBER, description: "Accuracy and depth of product information provided (0-100)" },
+        closingSkillScore: { type: Type.NUMBER, description: "Effectiveness of the call ending and conversion (0-100)" },
+        verdict: { type: Type.STRING, enum: ['STAR_PERFORMER', 'SOLID_PERFORMER', 'AVERAGE', 'NEEDS_COACHING'], description: "High-level performance classification" },
+        strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Specific key strengths of the agent in this call" },
+        weaknesses: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Specific areas for improvement" }
+      },
+      required: ["empathyScore", "clarityScore", "persuasionScore", "productKnowledgeScore", "closingSkillScore", "verdict", "strengths", "weaknesses"]
     }
   },
-  required: ["transcriptSegments", "summary", "qualityScore", "sentiment", "nextBestActions", "complianceChecklist", "glossaryUsed", "extractedInfo", "conversationStats"]
+  required: ["transcriptSegments", "summary", "qualityScore", "sentiment", "nextBestActions", "complianceChecklist", "glossaryUsed", "extractedInfo", "conversationStats", "agentPerformance"]
 };
 
+// Use gemini-3-flash-preview for general text and multimodal analysis tasks.
 export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: boolean, referenceText: string = ''): Promise<CallAnalysis> => {
   try {
     let systemPrompt = `You are a Senior Quality Control Auditor for a major bank. 
@@ -102,7 +120,8 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
             4. Suggest next best actions.
             5. Assign a quality score (0-100).
             6. EXTRACT KEY DATA: Identify specific fields in the 'extractedInfo' object. If a field is not mentioned, use "Tidak disebutkan".
-            7. ANALYZE CONVERSATION FLOW: Calculate talk ratios.
+            7. ANALYZE CONVERSATION FLOW: Calculate talk ratios and words per minute.
+            8. EVALUATE AGENT PERFORMANCE: Rate the agent's soft skills (Empathy, Clarity, Persuasion, Product Knowledge, Closing) based on the interaction. Provide a verdict and list specific strengths/weaknesses.
     `;
 
     if (referenceText) {
@@ -127,8 +146,9 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
       `;
     }
 
+    // Recommended model for basic analysis tasks.
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: {
         parts: [
           {
@@ -153,13 +173,14 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
       throw new Error("No response generated");
     }
 
-    return JSON.parse(response.text) as CallAnalysis;
+    return JSON.parse(response.text.trim()) as CallAnalysis;
   } catch (error) {
     console.error("Gemini Analysis Error:", error);
     throw error;
   }
 };
 
+// Use gemini-3-pro-preview for complex reasoning tasks like RAG chat.
 export const sendChatQuery = async (
   history: { role: 'user' | 'model'; text: string }[],
   currentMessage: string,
@@ -200,6 +221,7 @@ export const sendChatQuery = async (
     });
 
     const result = await chat.sendMessage({ message: currentMessage });
+    // Use .text property directly.
     return result.text || "I apologize, I couldn't generate a response.";
   } catch (error) {
     console.error("Gemini Chat Error:", error);

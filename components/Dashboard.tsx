@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   CheckCircle, AlertTriangle, XCircle, 
@@ -5,7 +6,9 @@ import {
   Activity, FileText, Zap, User, Headset, 
   ClipboardList, CreditCard, Clock, BarChart3, 
   Mic, Users, Sparkles, Calendar, Landmark, 
-  Phone, Mail, Briefcase, MapPin, Hash, Heart
+  Phone, Mail, Briefcase, MapPin, Hash, Heart,
+  Timer, Award, ShieldAlert, ThumbsUp, ThumbsDown,
+  ShieldCheck
 } from 'lucide-react';
 import { CallAnalysis } from '../types';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts';
@@ -37,6 +40,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     { label: 'Occupation', value: data.extractedInfo.occupation, icon: Briefcase, color: 'text-violet-600' },
     { label: 'Residential Address', value: data.extractedInfo.residentialAddress, icon: MapPin, color: 'text-orange-600' },
   ];
+
+  const WPM_THRESHOLD = 160;
+  const isTooFast = data.conversationStats.wordsPerMinute > WPM_THRESHOLD;
+
+  const performanceMetrics = [
+    { label: 'Empathy', score: data.agentPerformance.empathyScore, color: 'bg-pink-500' },
+    { label: 'Clarity', score: data.agentPerformance.clarityScore, color: 'bg-blue-500' },
+    { label: 'Persuasion', score: data.agentPerformance.persuasionScore, color: 'bg-indigo-500' },
+    { label: 'Product Knowledge', score: data.agentPerformance.productKnowledgeScore, color: 'bg-emerald-500' },
+    { label: 'Closing Skill', score: data.agentPerformance.closingSkillScore, color: 'bg-amber-500' },
+  ];
+
+  const getVerdictStyles = (verdict: string) => {
+    switch (verdict) {
+        case 'STAR_PERFORMER': return 'bg-emerald-500 text-white shadow-emerald-200';
+        case 'SOLID_PERFORMER': return 'bg-indigo-500 text-white shadow-indigo-200';
+        case 'AVERAGE': return 'bg-amber-500 text-white shadow-amber-200';
+        case 'NEEDS_COACHING': return 'bg-red-500 text-white shadow-red-200';
+        default: return 'bg-slate-500 text-white';
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in font-sans pb-10">
@@ -96,14 +120,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
              </div>
         </div>
 
-        {/* Quick Action / Status */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-center relative group">
-            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-3">Auditor Status</h3>
-             <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
-                <span className="text-lg font-semibold text-slate-800">Analysis Complete</span>
+        {/* Performance Verdict */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-center relative overflow-hidden group">
+            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-3">Agent Verdict</h3>
+             <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-xl ${getVerdictStyles(data.agentPerformance.verdict)} shadow-lg transition-transform group-hover:scale-110`}>
+                    <Award className="w-6 h-6" />
+                </div>
+                <div>
+                    <span className="text-sm font-black text-slate-800 tracking-tight block">
+                        {data.agentPerformance.verdict.replace('_', ' ')}
+                    </span>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Based on skills audit</p>
+                </div>
              </div>
-             <p className="text-xs text-slate-400 mt-2">Ready for review & coaching session.</p>
         </div>
       </div>
 
@@ -112,7 +142,79 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         {/* 2. LEFT COLUMN: Analytics & Compliance */}
         <div className="lg:col-span-2 space-y-6">
             
-            {/* Talk Time Effectiveness */}
+            {/* AGENT PERFORMANCE SCORECARD - NEW SECTION */}
+            <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                            <Award className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-800">Agent Competency Profile</h3>
+                            <p className="text-xs text-slate-500">Soft Skills & Sales Effectiveness</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Skill Bars */}
+                    <div className="space-y-5">
+                        {performanceMetrics.map((metric, idx) => (
+                            <div key={idx} className="space-y-2">
+                                <div className="flex justify-between items-center text-xs font-black uppercase tracking-wider text-slate-500">
+                                    <span>{metric.label}</span>
+                                    <span className="text-slate-800 font-mono">{metric.score}%</span>
+                                </div>
+                                <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full ${metric.color} transition-all duration-1000 ease-out shadow-sm`}
+                                        style={{ width: `${metric.score}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Strengths & Weaknesses */}
+                    <div className="space-y-6">
+                        <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-2 opacity-10">
+                                <ThumbsUp className="w-12 h-12 text-emerald-900" />
+                            </div>
+                            <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <TrendingUp className="w-3 h-3" /> Key Strengths
+                            </h4>
+                            <ul className="space-y-2">
+                                {data.agentPerformance.strengths.map((str, i) => (
+                                    <li key={i} className="text-xs text-emerald-800 font-medium flex items-start gap-2">
+                                        <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-1 flex-shrink-0"></div>
+                                        {str}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+
+                        <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-2 opacity-10">
+                                <ThumbsDown className="w-12 h-12 text-rose-900" />
+                            </div>
+                            <h4 className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <ShieldAlert className="w-3 h-3" /> Focus Areas
+                            </h4>
+                            <ul className="space-y-2">
+                                {data.agentPerformance.weaknesses.map((weak, i) => (
+                                    <li key={i} className="text-xs text-rose-800 font-medium flex items-start gap-2">
+                                        <div className="w-1.5 h-1.5 bg-rose-400 rounded-full mt-1 flex-shrink-0"></div>
+                                        {weak}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Conversation Metrics & Pace */}
             <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 relative overflow-hidden">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
@@ -120,20 +222,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                             <Clock className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-bold text-slate-800">Talk Time Effectiveness</h3>
-                            <p className="text-xs text-slate-500">Agent vs. Customer Share of Voice</p>
+                            <h3 className="text-lg font-bold text-slate-800">Conversation Metrics</h3>
+                            <p className="text-xs text-slate-500">Share of Voice & Speech Dynamics</p>
                         </div>
                     </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                        data.conversationStats.effectivenessRating === 'OPTIMAL' 
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                        : 'bg-amber-50 text-amber-700 border-amber-200'
-                    }`}>
-                        {data.conversationStats.effectivenessRating.replace('_', ' ')}
+                    <div className="flex gap-2">
+                      <div className={`px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-widest ${
+                          data.conversationStats.effectivenessRating === 'OPTIMAL' 
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                          : 'bg-amber-50 text-amber-700 border-amber-200'
+                      }`}>
+                          {data.conversationStats.effectivenessRating.replace('_', ' ')}
+                      </div>
+                      <div className={`px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-widest flex items-center gap-1.5 ${
+                          isTooFast ? 'bg-red-50 text-red-700 border-red-200 animate-pulse' : 'bg-slate-50 text-slate-600 border-slate-200'
+                      }`}>
+                          {isTooFast && <AlertTriangle className="w-3 h-3" />}
+                          {isTooFast ? 'Speaking Too Fast' : 'Normal Pace'}
+                      </div>
                     </div>
                 </div>
 
-                <div className="mb-6">
+                <div className="mb-8">
                     <div className="flex justify-between text-sm font-semibold mb-2">
                         <span className="text-blue-600 flex items-center gap-1"><Headset className="w-4 h-4" /> Agent: {Math.round(data.conversationStats.agentTalkTimePct)}%</span>
                         <span className="text-emerald-600 flex items-center gap-1">Customer: {Math.round(data.conversationStats.customerTalkTimePct)}% <User className="w-4 h-4" /></span>
@@ -146,9 +256,37 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                             <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         </div>
                     </div>
-                    <div className="flex justify-between text-[10px] text-slate-400 mt-1 px-1">
-                        <span>Target: &lt;60%</span>
-                        <span>Target: &gt;40%</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
+                        <div className={`p-2 rounded-xl ${isTooFast ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
+                            <Timer className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Words Per Minute</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className={`text-2xl font-black ${isTooFast ? 'text-red-600' : 'text-slate-800'}`}>
+                                    {data.conversationStats.wordsPerMinute}
+                                </span>
+                                <span className="text-xs font-bold text-slate-400">WPM</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
+                        <div className="p-2 bg-amber-100 text-amber-600 rounded-xl">
+                            <Activity className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Interruptions</span>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-2xl font-black text-slate-800">
+                                    {data.conversationStats.interruptionCount}
+                                </span>
+                                <span className="text-xs font-bold text-slate-400">Times</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -158,39 +296,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                         <h4 className="text-sm font-semibold text-slate-700">Analytics Insight</h4>
                         <p className="text-sm text-slate-600 leading-relaxed mt-1">
                             {data.conversationStats.feedback}
+                            {isTooFast && (
+                                <span className="block mt-2 text-red-600 font-bold text-xs flex items-center gap-1">
+                                    <AlertTriangle className="w-3.5 h-3.5" /> 
+                                    Coaching Tip: The agent's speech rate exceeds {WPM_THRESHOLD} WPM. Encourage a more deliberate pace for better customer comprehension.
+                                </span>
+                            )}
                         </p>
                     </div>
-                </div>
-            </div>
-
-            {/* Compliance & Executive Summary */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                <div className="flex items-center gap-2 mb-4">
-                    <Activity className="w-5 h-5 text-indigo-600" />
-                    <h3 className="text-lg font-bold text-slate-800">Executive Summary</h3>
-                </div>
-                <p className="text-slate-600 leading-relaxed text-sm mb-6 bg-indigo-50/50 p-4 rounded-xl border border-indigo-50">
-                    {data.summary}
-                </p>
-
-                <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Compliance Checklist</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {data.complianceChecklist.map((item, idx) => (
-                        <div key={idx} className={`p-3 rounded-lg border flex items-start gap-3 transition-colors ${
-                            item.status === 'PASS' ? 'bg-white border-slate-200 hover:border-emerald-200' : 
-                            item.status === 'WARNING' ? 'bg-amber-50/30 border-amber-100' : 'bg-red-50/30 border-red-100'
-                        }`}>
-                            <div className="mt-0.5">
-                                {item.status === 'PASS' && <CheckCircle className="w-5 h-5 text-emerald-500" />}
-                                {item.status === 'WARNING' && <AlertTriangle className="w-5 h-5 text-amber-500" />}
-                                {item.status === 'FAIL' && <XCircle className="w-5 h-5 text-red-500" />}
-                            </div>
-                            <div>
-                                <h5 className="text-sm font-semibold text-slate-800">{item.category}</h5>
-                                <p className="text-xs text-slate-500 mt-0.5">{item.details}</p>
-                            </div>
-                        </div>
-                    ))}
                 </div>
             </div>
 
@@ -235,7 +348,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         {/* 3. RIGHT COLUMN: CRM Data & Coaching */}
         <div className="space-y-6">
             
-            {/* Automated CRM Entry - UPDATED FOR GRANULAR FIELDS */}
+            {/* Automated CRM Entry */}
             <div className="bg-white rounded-2xl p-0 shadow-lg border border-slate-200 overflow-hidden">
                 <div className="bg-slate-900 p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -283,6 +396,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                 </div>
             </div>
 
+            {/* Compliance Checklist - Moved here to keep columns balanced */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+                <div className="flex items-center gap-2 mb-4">
+                    <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                    <h3 className="text-lg font-bold text-slate-800">Compliance Audit</h3>
+                </div>
+                <div className="space-y-3">
+                    {data.complianceChecklist.map((item, idx) => (
+                        <div key={idx} className={`p-3 rounded-lg border flex items-start gap-3 transition-colors ${
+                            item.status === 'PASS' ? 'bg-white border-slate-200 hover:border-emerald-200' : 
+                            item.status === 'WARNING' ? 'bg-amber-50/30 border-amber-100' : 'bg-red-50/30 border-red-100'
+                        }`}>
+                            <div className="mt-0.5">
+                                {item.status === 'PASS' && <CheckCircle className="w-5 h-5 text-emerald-500" />}
+                                {item.status === 'WARNING' && <AlertTriangle className="w-5 h-5 text-amber-500" />}
+                                {item.status === 'FAIL' && <XCircle className="w-5 h-5 text-red-500" />}
+                            </div>
+                            <div>
+                                <h5 className="text-xs font-black text-slate-800 uppercase tracking-tight">{item.category}</h5>
+                                <p className="text-[11px] text-slate-500 mt-0.5">{item.details}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
             {/* Next Best Actions (Coaching) */}
             <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 shadow-xl text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-10">
@@ -304,28 +443,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                         ))}
                     </ul>
                 </div>
-            </div>
-
-            {/* Glossary */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                 <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Detected Terminology</h3>
-                 <div className="flex flex-wrap gap-2">
-                    {data.glossaryUsed.length === 0 ? (
-                        <span className="text-xs text-slate-400 italic">No specific terms detected.</span>
-                    ) : (
-                        data.glossaryUsed.map((term, idx) => (
-                            <div key={idx} className="group relative">
-                                <span className="px-3 py-1.5 bg-indigo-50 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-100 cursor-help hover:bg-indigo-100 transition-colors">
-                                    {term.term}
-                                </span>
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-800 text-white text-xs p-2 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20">
-                                    <p className="font-semibold mb-1">{term.definition}</p>
-                                    <p className="opacity-70 italic">"{term.contextInCall}"</p>
-                                </div>
-                            </div>
-                        ))
-                    )}
-                 </div>
             </div>
 
         </div>

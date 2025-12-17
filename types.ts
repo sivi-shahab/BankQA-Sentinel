@@ -39,6 +39,17 @@ export interface ConversationStats {
   feedback: string;
 }
 
+export interface AgentPerformance {
+  empathyScore: number; // 0-100
+  clarityScore: number; // 0-100
+  persuasionScore: number; // 0-100
+  productKnowledgeScore: number; // 0-100
+  closingSkillScore: number; // 0-100
+  verdict: 'STAR_PERFORMER' | 'SOLID_PERFORMER' | 'AVERAGE' | 'NEEDS_COACHING';
+  strengths: string[];
+  weaknesses: string[];
+}
+
 export interface CallAnalysis {
   transcriptSegments: TranscriptSegment[];
   summary: string;
@@ -49,6 +60,7 @@ export interface CallAnalysis {
   glossaryUsed: GlossaryTerm[];
   extractedInfo: ExtractedInfo;
   conversationStats: ConversationStats;
+  agentPerformance: AgentPerformance;
 }
 
 export interface ChatMessage {
