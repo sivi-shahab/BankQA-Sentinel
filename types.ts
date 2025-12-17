@@ -1,3 +1,4 @@
+
 export interface ComplianceItem {
   category: string;
   status: 'PASS' | 'FAIL' | 'WARNING';
@@ -31,20 +32,20 @@ export interface ExtractedInfo {
 }
 
 export interface ConversationStats {
-  agentTalkTimePct: number; // e.g. 60
-  customerTalkTimePct: number; // e.g. 40
-  wordsPerMinute: number; // Estimated pace
+  agentTalkTimePct: number; 
+  customerTalkTimePct: number;
+  wordsPerMinute: number;
   interruptionCount: number;
   effectivenessRating: 'OPTIMAL' | 'AGENT_DOMINATED' | 'CUSTOMER_DOMINATED';
   feedback: string;
 }
 
 export interface AgentPerformance {
-  empathyScore: number; // 0-100
-  clarityScore: number; // 0-100
-  persuasionScore: number; // 0-100
-  productKnowledgeScore: number; // 0-100
-  closingSkillScore: number; // 0-100
+  empathyScore: number;
+  clarityScore: number;
+  persuasionScore: number;
+  productKnowledgeScore: number;
+  closingSkillScore: number;
   verdict: 'STAR_PERFORMER' | 'SOLID_PERFORMER' | 'AVERAGE' | 'NEEDS_COACHING';
   strengths: string[];
   weaknesses: string[];
@@ -53,7 +54,7 @@ export interface AgentPerformance {
 export interface CallAnalysis {
   transcriptSegments: TranscriptSegment[];
   summary: string;
-  qualityScore: number; // 0-100
+  qualityScore: number;
   sentiment: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
   nextBestActions: string[];
   complianceChecklist: ComplianceItem[];
@@ -61,6 +62,26 @@ export interface CallAnalysis {
   extractedInfo: ExtractedInfo;
   conversationStats: ConversationStats;
   agentPerformance: AgentPerformance;
+}
+
+// New types for Team View
+export interface AgentSummary {
+  id: string;
+  name: string;
+  avatar: string;
+  avgScore: number;
+  callsCount: number;
+  complianceRate: number;
+  topSkill: string;
+  status: 'Active' | 'In Training' | 'Probation';
+}
+
+export interface TeamStats {
+  avgQualityScore: number;
+  totalCalls: number;
+  complianceTargetMet: number; // percentage
+  sentimentDistribution: { name: string; value: number }[];
+  competencyAverages: { subject: string; A: number; fullMark: number }[];
 }
 
 export interface ChatMessage {
@@ -77,3 +98,5 @@ export enum AnalysisStatus {
   COMPLETE = 'COMPLETE',
   ERROR = 'ERROR'
 }
+
+export type AppView = 'WORKBENCH' | 'TEAM_ANALYTICS';

@@ -1,14 +1,12 @@
 
 import React from 'react';
 import { 
-  CheckCircle, AlertTriangle, XCircle, 
   TrendingUp, TrendingDown, Minus,
   Activity, FileText, Zap, User, Headset, 
   ClipboardList, CreditCard, Clock, BarChart3, 
   Mic, Users, Sparkles, Calendar, Landmark, 
   Phone, Mail, Briefcase, MapPin, Hash, Heart,
-  Timer, Award, ShieldAlert, ThumbsUp, ThumbsDown,
-  ShieldCheck
+  Timer, Award, ShieldAlert, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 import { CallAnalysis } from '../types';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts';
@@ -94,7 +92,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                 </ResponsiveContainer>
            </div>
            
-           {/* Background Decor */}
            <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         </div>
 
@@ -139,10 +136,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* 2. LEFT COLUMN: Analytics & Compliance */}
         <div className="lg:col-span-2 space-y-6">
             
-            {/* AGENT PERFORMANCE SCORECARD - NEW SECTION */}
+            {/* AGENT PERFORMANCE SCORECARD */}
             <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100">
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
@@ -157,7 +153,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Skill Bars */}
                     <div className="space-y-5">
                         {performanceMetrics.map((metric, idx) => (
                             <div key={idx} className="space-y-2">
@@ -175,7 +170,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                         ))}
                     </div>
 
-                    {/* Strengths & Weaknesses */}
                     <div className="space-y-6">
                         <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 relative overflow-hidden">
                             <div className="absolute top-0 right-0 p-2 opacity-10">
@@ -237,7 +231,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                       <div className={`px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-widest flex items-center gap-1.5 ${
                           isTooFast ? 'bg-red-50 text-red-700 border-red-200 animate-pulse' : 'bg-slate-50 text-slate-600 border-slate-200'
                       }`}>
-                          {isTooFast && <AlertTriangle className="w-3 h-3" />}
+                          <ShieldAlert className="w-3 h-3" />
                           {isTooFast ? 'Speaking Too Fast' : 'Normal Pace'}
                       </div>
                     </div>
@@ -253,7 +247,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                             className="h-full bg-blue-500 shadow-md relative group transition-all duration-1000 ease-out"
                             style={{ width: `${data.conversationStats.agentTalkTimePct}%` }}
                         >
-                            <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                         </div>
                     </div>
                 </div>
@@ -298,8 +291,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                             {data.conversationStats.feedback}
                             {isTooFast && (
                                 <span className="block mt-2 text-red-600 font-bold text-xs flex items-center gap-1">
-                                    <AlertTriangle className="w-3.5 h-3.5" /> 
-                                    Coaching Tip: The agent's speech rate exceeds {WPM_THRESHOLD} WPM. Encourage a more deliberate pace for better customer comprehension.
+                                    <ShieldAlert className="w-3.5 h-3.5" /> 
+                                    Coaching Tip: Agent speech rate is too high.
                                 </span>
                             )}
                         </p>
@@ -345,9 +338,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
             </div>
         </div>
 
-        {/* 3. RIGHT COLUMN: CRM Data & Coaching */}
         <div className="space-y-6">
-            
             {/* Automated CRM Entry */}
             <div className="bg-white rounded-2xl p-0 shadow-lg border border-slate-200 overflow-hidden">
                 <div className="bg-slate-900 p-4 flex items-center justify-between">
@@ -355,22 +346,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                         <ClipboardList className="w-5 h-5 text-indigo-400" />
                         <h3 className="text-white font-bold">Auto-Captured Data</h3>
                     </div>
-                    <span className="bg-indigo-500/20 text-indigo-300 text-[10px] px-2 py-0.5 rounded-full border border-indigo-500/30 uppercase font-black">AI Verified</span>
                 </div>
                 <div className="p-6 space-y-4">
-                    {/* Product Highlight */}
                     <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
                         <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Active Product Offering</label>
                         <div className="flex items-center gap-2 mt-1">
                             <Zap className="w-4 h-4 text-indigo-600" />
                             <span className="text-lg font-black text-indigo-900 tracking-tight">{data.extractedInfo?.productName || 'N/A'}</span>
                         </div>
-                        <div className="mt-2 text-xs font-bold text-emerald-600 flex items-center gap-1">
-                             <TrendingUp className="w-3 h-3" /> Potential: {data.extractedInfo?.contributionAmount || 'N/A'}
-                        </div>
                     </div>
-
-                    {/* Detailed Fields - 1 Data 1 Field */}
                     <div className="grid grid-cols-1 gap-4 mt-4">
                         {crmFields.map((field, idx) => (
                             <div key={idx} className="group flex items-start gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
@@ -378,7 +362,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                                     <field.icon className="w-3.5 h-3.5" />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5 group-hover:text-indigo-500 transition-colors">
+                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
                                         {field.label}
                                     </label>
                                     <div className={`text-sm font-bold tracking-tight ${field.value === 'Tidak disebutkan' ? 'text-slate-300 italic font-normal' : 'text-slate-800'}`}>
@@ -388,37 +372,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                             </div>
                         ))}
                     </div>
-                </div>
-                <div className="bg-slate-50 p-4 text-center border-t border-slate-100">
-                    <button className="text-xs font-black text-indigo-600 hover:text-indigo-700 flex items-center justify-center gap-2 w-full uppercase tracking-widest">
-                        Commit to Enterprise CRM <Users className="w-4 h-4" />
-                    </button>
-                </div>
-            </div>
-
-            {/* Compliance Checklist - Moved here to keep columns balanced */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
-                <div className="flex items-center gap-2 mb-4">
-                    <ShieldCheck className="w-5 h-5 text-indigo-600" />
-                    <h3 className="text-lg font-bold text-slate-800">Compliance Audit</h3>
-                </div>
-                <div className="space-y-3">
-                    {data.complianceChecklist.map((item, idx) => (
-                        <div key={idx} className={`p-3 rounded-lg border flex items-start gap-3 transition-colors ${
-                            item.status === 'PASS' ? 'bg-white border-slate-200 hover:border-emerald-200' : 
-                            item.status === 'WARNING' ? 'bg-amber-50/30 border-amber-100' : 'bg-red-50/30 border-red-100'
-                        }`}>
-                            <div className="mt-0.5">
-                                {item.status === 'PASS' && <CheckCircle className="w-5 h-5 text-emerald-500" />}
-                                {item.status === 'WARNING' && <AlertTriangle className="w-5 h-5 text-amber-500" />}
-                                {item.status === 'FAIL' && <XCircle className="w-5 h-5 text-red-500" />}
-                            </div>
-                            <div>
-                                <h5 className="text-xs font-black text-slate-800 uppercase tracking-tight">{item.category}</h5>
-                                <p className="text-[11px] text-slate-500 mt-0.5">{item.details}</p>
-                            </div>
-                        </div>
-                    ))}
                 </div>
             </div>
 
@@ -444,7 +397,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                     </ul>
                 </div>
             </div>
-
         </div>
       </div>
     </div>
