@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { CallAnalysis, PiiSettings, DictionaryItem } from "../types";
+import { CallAnalysis, PiiSettings, DictionaryItem, FullDashboardContext } from "../types";
 
 const analysisSchema = {
   type: Type.OBJECT,
@@ -167,14 +167,33 @@ export const analyzeTelemarketingAudio = async (
 export const sendChatQuery = async (
   history: { role: 'user' | 'model'; text: string }[],
   currentMessage: string,
-  contextData?: CallAnalysis,
+  dashboardContext: FullDashboardContext,
   referenceText: string = ''
 ): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
-    let systemInstruction = `You are an AI Assistant for a Banking Quality Control Dashboard.
-    Context Data: ${contextData ? JSON.stringify(contextData) : 'None'}.
-    Reference: ${referenceText}`;
+    const systemInstruction = `You are the OmniAssure FinAI Intelligence Assistant.
+    You have absolute access to all data on the dashboard for deep context analysis.
+    
+    *** DASHBOARD DATA (SIMULATED DB) ***
+    LEADS: ${JSON.stringify(dashboardContext.leads)}
+    CUSTOMERS: ${JSON.stringify(dashboardContext.customers)}
+    CRM_KPIs: ${JSON.stringify(dashboardContext.crmStats)}
+    TEAM_KPIs: ${JSON.stringify(dashboardContext.teamStats)}
+    AGENTS: ${JSON.stringify(dashboardContext.agents)}
+    CURRENT_AUDIT: ${dashboardContext.currentCallAnalysis ? JSON.stringify(dashboardContext.currentCallAnalysis) : 'No call currently loaded.'}
+    PRIVACY_SETTINGS: ${JSON.stringify(dashboardContext.piiSettings)}
+    RAG_REFERENCE: ${referenceText || 'No reference documents uploaded.'}
+    
+    *** YOUR GOAL ***
+    1. Answer questions about specific customer data (e.g., 'Who is Bapak Ahmad?').
+    2. Analyze churn risks based on the Retention data provided.
+    3. Summarize team performance or identify the top performing agent.
+    4. If a call is loaded, answer questions about its transcript or compliance score.
+    5. Always be professional, bank-grade, and precise.
+    6. Mention specific IDs or Tiers where relevant.
+    7. You understand both Indonesian and English.
+    `;
 
     const chat = ai.chats.create({
       model: 'gemini-3-pro-preview',

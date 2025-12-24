@@ -1,20 +1,20 @@
 
 import React, { useRef, useState } from 'react';
-import { BookText, Upload, FileText, X, CheckCircle2, FileSpreadsheet, FileArchive, Loader2 } from 'lucide-react';
+import { BookText, Upload, FileText, X, CheckCircle2, FileSpreadsheet, FileArchive, Loader2, Trash2, Layers } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { KnowledgeDocument } from '../types';
 
 // Initialize PDF.js worker
 import * as pdfjsLib from 'pdfjs-dist';
 pdfjsLib.GlobalWorkerOptions.workerSrc = `https://esm.sh/pdfjs-dist@4.10.38/build/pdf.worker.mjs`;
 
 interface KnowledgeBaseProps {
-  onContextChange: (text: string) => void;
-  referenceText: string;
+  onDocumentsChange: (docs: KnowledgeDocument[]) => void;
+  documents: KnowledgeDocument[];
 }
 
-export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ onContextChange, referenceText }) => {
+export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ onDocumentsChange, documents }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [fileName, setFileName] = useState<string>('');
   const [isParsing, setIsParsing] = useState(false);
 
   const extractPdfText = async (data: ArrayBuffer): Promise<string> => {
@@ -45,7 +45,6 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ onContextChange, r
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setFileName(file.name);
     setIsParsing(true);
     
     try {
@@ -57,89 +56,136 @@ export const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ onContextChange, r
       } else if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv')) {
         text = extractExcelText(arrayBuffer);
       } else {
-        // Fallback for text files
         text = new TextDecoder().decode(arrayBuffer);
       }
 
-      onContextChange(text);
+      const newDoc: KnowledgeDocument = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: file.name,
+        type: file.type || 'text/plain',
+        content: text,
+        size: file.size,
+        uploadDate: new Date()
+      };
+
+      onDocumentsChange([...documents, newDoc]);
     } catch (err) {
       console.error("Parsing Error:", err);
       alert("Failed to parse document. Please ensure it's a valid PDF or Excel file.");
     } finally {
       setIsParsing(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
-  const clearFile = () => {
-    onContextChange('');
-    setFileName('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  const removeDocument = (id: string) => {
+    onDocumentsChange(documents.filter(doc => doc.id !== id));
   };
 
+  const totalSizeKB = Math.round(documents.reduce((acc, d) => acc + d.content.length, 0) / 1024);
+
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 transition-all">
-      <div className="flex items-center gap-2 mb-4">
-        <div className="bg-indigo-50 p-2 rounded-xl text-indigo-600">
-            <BookText className="w-5 h-5" />
+    <div className="bg-white rounded-[32px] shadow-sm border border-slate-200 p-6 flex flex-col h-[500px]">
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <div className="bg-indigo-50 p-3 rounded-2xl text-indigo-600 shadow-sm border border-indigo-100">
+            <Layers className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-black text-slate-800 text-sm tracking-tight uppercase">Multiple RAG Library</h3>
+            <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest">Multi-source SOP Intelligence</p>
+          </div>
         </div>
-        <div>
-            <h3 className="font-bold text-slate-800 text-sm">RAG Knowledge Base</h3>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Support: PDF, Excel, CSV, Text</p>
+        <div className="flex flex-col items-end">
+            <span className="text-[10px] font-black text-indigo-600">{documents.length} Source(s)</span>
+            <span className="text-[9px] text-slate-400 font-bold">{totalSizeKB} KB Active Context</span>
         </div>
       </div>
 
-      {!referenceText && !isParsing ? (
-        <div 
-            onClick={() => fileInputRef.current?.click()}
-            className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:bg-indigo-50 hover:border-indigo-300 transition-all group"
-        >
-          <div className="flex justify-center gap-3 mb-3">
-            <FileArchive className="w-6 h-6 text-slate-300 group-hover:text-red-400 transition-colors" />
-            <FileSpreadsheet className="w-6 h-6 text-slate-300 group-hover:text-emerald-500 transition-colors" />
-            <FileText className="w-6 h-6 text-slate-300 group-hover:text-blue-500 transition-colors" />
+      {/* Upload Zone */}
+      <div 
+          onClick={() => !isParsing && fileInputRef.current?.click()}
+          className={`border-2 border-dashed border-slate-100 rounded-[24px] p-6 text-center transition-all group relative mb-6 ${
+            isParsing ? 'bg-slate-50 cursor-not-allowed' : 'cursor-pointer hover:bg-indigo-50/50 hover:border-indigo-200'
+          }`}
+      >
+        {isParsing ? (
+           <div className="flex flex-col items-center justify-center animate-pulse">
+              <Loader2 className="w-6 h-6 text-indigo-600 animate-spin mb-2" />
+              <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Parsing Structure...</p>
+           </div>
+        ) : (
+          <>
+            <div className="flex justify-center gap-4 mb-3">
+              <FileArchive className="w-6 h-6 text-slate-200 group-hover:text-red-400 transition-colors" />
+              <FileSpreadsheet className="w-6 h-6 text-slate-200 group-hover:text-emerald-500 transition-colors" />
+              <FileText className="w-6 h-6 text-slate-200 group-hover:text-blue-500 transition-colors" />
+            </div>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Add Reference Document</p>
+            <p className="text-[9px] text-slate-300 font-bold uppercase tracking-tight">PDF, Excel, CSV, or Text</p>
+          </>
+        )}
+        <input 
+          type="file" 
+          ref={fileInputRef} 
+          className="hidden" 
+          accept=".pdf,.xlsx,.xls,.csv,.txt,.md"
+          onChange={handleFileUpload}
+        />
+      </div>
+
+      {/* Document List */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3">
+        {documents.length === 0 && !isParsing ? (
+          <div className="h-full flex flex-col items-center justify-center text-slate-200 opacity-50 border border-dashed border-slate-100 rounded-2xl">
+            <BookText className="w-10 h-10 mb-2" />
+            <p className="text-[10px] font-black uppercase tracking-widest">Library is empty</p>
           </div>
-          <p className="text-xs font-bold text-slate-500 uppercase">Drop Reference Document</p>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            className="hidden" 
-            accept=".pdf,.xlsx,.xls,.csv,.txt,.md"
-            onChange={handleFileUpload}
-          />
-        </div>
-      ) : isParsing ? (
-        <div className="border border-slate-100 rounded-xl p-8 flex flex-col items-center justify-center bg-slate-50">
-            <Loader2 className="w-6 h-6 text-indigo-600 animate-spin mb-2" />
-            <p className="text-xs font-medium text-slate-500">Extracting content...</p>
-        </div>
-      ) : (
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-            <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="bg-white p-1.5 rounded-lg border border-slate-200">
-                         {fileName.endsWith('.pdf') ? <FileText className="w-4 h-4 text-red-500" /> : <FileSpreadsheet className="w-4 h-4 text-emerald-500" />}
-                    </div>
-                    <span className="text-sm font-bold text-slate-700 truncate">{fileName}</span>
-                    <CheckCircle2 className="w-3 h-3 text-emerald-500 ml-1" />
+        ) : (
+          documents.map((doc) => (
+            <div key={doc.id} className="group p-4 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-indigo-100 transition-all flex items-center justify-between">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 flex-shrink-0">
+                  {doc.name.endsWith('.pdf') ? (
+                    <FileText className="w-4 h-4 text-rose-500" />
+                  ) : (
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+                  )}
                 </div>
-                <button 
-                    onClick={clearFile}
-                    className="text-slate-400 hover:text-red-500 transition-colors p-1"
-                >
-                    <X className="w-4 h-4" />
-                </button>
-            </div>
-            <div className="bg-white border border-slate-200 rounded-lg p-3 max-h-32 overflow-y-auto custom-scrollbar">
-                <p className="text-[10px] text-slate-500 font-mono whitespace-pre-wrap leading-relaxed">{referenceText.substring(0, 1000)}...</p>
-            </div>
-            <div className="mt-2 flex justify-between items-center">
-                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold">READY FOR ANALYSIS</span>
-                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">
-                    {Math.round(referenceText.length / 1024)} KB Loaded
+                <div className="min-w-0">
+                  <h4 className="text-[11px] font-black text-slate-800 truncate leading-none mb-1">{doc.name}</h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">
+                      {Math.round(doc.size / 1024)} KB
+                    </span>
+                    <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                    <span className="text-[9px] text-emerald-500 font-bold uppercase tracking-widest">Synchronized</span>
+                  </div>
                 </div>
+              </div>
+              <button 
+                onClick={() => removeDocument(doc.id)}
+                className="p-2 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
-        </div>
-      )}
+          ))
+        )}
+      </div>
+
+      <div className="mt-6 pt-4 border-t border-slate-50 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Live Context Active</span>
+          </div>
+          <button 
+            onClick={() => onDocumentsChange([])}
+            className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:underline"
+          >
+            Clear All
+          </button>
+      </div>
     </div>
   );
 };

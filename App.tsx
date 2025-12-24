@@ -11,7 +11,7 @@ import { ConversationResume } from './components/ConversationResume';
 import { CRMDashboard } from './components/CRMDashboard';
 import { AuditTrail } from './components/AuditTrail';
 import { analyzeTelemarketingAudio } from './services/geminiService';
-import { AnalysisStatus, CallAnalysis, AppView, PiiSettings, DictionaryItem, AuditLog } from './types';
+import { AnalysisStatus, CallAnalysis, AppView, PiiSettings, DictionaryItem, AuditLog, FullDashboardContext, KnowledgeDocument } from './types';
 import { 
   ShieldCheck, 
   LayoutDashboard, 
@@ -38,15 +38,95 @@ import {
   FileText
 } from 'lucide-react';
 
+// Shared Mock Data for Context Injection
+const MOCK_LEADS = [
+  { id: '1', name: 'Budi Santoso', source: 'Facebook Ads', score: 92, status: 'Proposal', category: 'Hot', kycStatus: 'Verified' },
+  { id: '2', name: 'Lia Wijaya', source: 'Web Form', score: 78, status: 'Meeting', category: 'Warm', kycStatus: 'Pending' },
+  { id: '3', name: 'Andi Pratama', source: 'Referral', score: 85, status: 'Prospect', category: 'Hot', kycStatus: 'Verified' },
+  { id: '4', name: 'Santi Putri', source: 'Instagram', score: 45, status: 'Prospect', category: 'Cold', kycStatus: 'Rejected' },
+  { id: '5', name: 'Rian Hidayat', source: 'LinkedIn', score: 65, status: 'Meeting', category: 'Warm', kycStatus: 'Verified' },
+];
+
+const MOCK_CUSTOMERS = [
+  { 
+    id: 'C001', name: 'Bapak Ahmad', tier: 'Priority', 
+    portfolio: { savings: 150000000, deposits: 500000000, loans: 0, investment: 120000000, insurance: 50000000 },
+    churnRisk: 12, riskTrend: 'DOWN', riskFactors: ['Stable Balance', 'Active Investment'],
+    lastInteraction: '2 days ago', nba: 'Offer Reksadana Saham'
+  },
+  { 
+    id: 'C002', name: 'Ibu Maya', tier: 'Gold', 
+    portfolio: { savings: 45000000, deposits: 0, loans: 250000000, investment: 0, insurance: 10000000 },
+    churnRisk: 68, riskTrend: 'UP', riskFactors: ['Large Withdrawal', 'Account Inactivity', 'Loan Delinquency'],
+    lastInteraction: '1 month ago', nba: 'Loan Restructuring Call'
+  },
+  { 
+    id: 'C003', name: 'Bapak Kevin', tier: 'Silver', 
+    portfolio: { savings: 12000000, deposits: 10000000, loans: 0, investment: 0, insurance: 0 },
+    churnRisk: 35, riskTrend: 'STABLE', riskFactors: ['Minimal Activity', 'Competitor Interest Detected'],
+    lastInteraction: '1 week ago', nba: 'Credit Card Cross-sell'
+  },
+];
+
+const CRM_STATS = {
+  acquisition: {
+    totalLeads: 452,
+    conversionRate: 18.5,
+    funnelData: [
+      { stage: 'Leads', count: 452 },
+      { stage: 'Prospect', count: 310 },
+      { stage: 'Meeting', count: 185 },
+      { stage: 'Proposal', count: 92 },
+      { stage: 'Closing', count: 48 },
+    ]
+  },
+  retention: {
+    avgCLV: 12500000,
+    churnRate: 3.2,
+    activeCampaigns: 12,
+    slaMet: 96.8,
+    segments: [
+      { name: 'High Value Whales', count: 124, avgValue: 750000000, riskLevel: 'LOW', strategy: 'Concierge Priority Service' },
+      { name: 'At Risk Priority', count: 35, avgValue: 520000000, riskLevel: 'HIGH', strategy: 'Immediate Retention Call' },
+      { name: 'Passive Savers', count: 850, avgValue: 25000000, riskLevel: 'MEDIUM', strategy: 'Investment Upsell Campaign' },
+      { name: 'Dormant Students', count: 420, avgValue: 1200000, riskLevel: 'HIGH', strategy: 'Activation Incentive' },
+    ]
+  }
+};
+
+const TEAM_STATS = {
+  avgQualityScore: 84,
+  totalCalls: 1240,
+  complianceTargetMet: 91,
+  sentimentDistribution: [
+    { name: 'Positive', value: 65 },
+    { name: 'Neutral', value: 25 },
+    { name: 'Negative', value: 10 },
+  ],
+  competencyAverages: [
+    { subject: 'Empathy', A: 85, fullMark: 100 },
+    { subject: 'Clarity', A: 78, fullMark: 100 },
+    { subject: 'Persuasion', A: 92, fullMark: 100 },
+    { subject: 'Knowledge', A: 88, fullMark: 100 },
+    { subject: 'Closing', A: 70, fullMark: 100 },
+  ],
+};
+
+const MOCK_AGENTS = [
+  { id: '1', name: 'Sarah Jenkins', avatar: 'SJ', avgScore: 94, callsCount: 128, complianceRate: 99, topSkill: 'Empathy', status: 'Active' },
+  { id: '2', name: 'Michael Chen', avatar: 'MC', avgScore: 88, callsCount: 142, complianceRate: 96, topSkill: 'Product Knowledge', status: 'Active' },
+  { id: '3', name: 'Aria Stark', avatar: 'AS', avgScore: 82, callsCount: 96, complianceRate: 92, topSkill: 'Persuasion', status: 'Active' },
+];
+
+// Define main App component
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>('WORKBENCH');
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [status, setStatus] = useState<AnalysisStatus>(AnalysisStatus.IDLE);
   const [analysisResult, setAnalysisResult] = useState<CallAnalysis | null>(null);
-  const [referenceText, setReferenceText] = useState<string>('');
-  const [hasApiKey, setHasApiKey] = useState(true);
-
+  const [knowledgeDocs, setKnowledgeDocs] = useState<KnowledgeDocument[]>([]);
+  
   // Management States
   const [piiSettings, setPiiSettings] = useState<PiiSettings>({
     redactEmail: true,
@@ -65,6 +145,20 @@ const App: React.FC = () => {
     { id: '1', timestamp: new Date(), user: 'Enterprise Officer', action: 'SYSTEM_LOGIN', resource: 'Secure Portal', status: 'SUCCESS', ipAddress: '192.168.1.104' },
     { id: '2', timestamp: new Date(Date.now() - 500000), user: 'Enterprise Officer', action: 'PII_CONFIG_UPDATE', resource: 'Data Privacy Policy', status: 'WARNING', ipAddress: '192.168.1.104' }
   ]);
+
+  // Construct Aggregated Context for Analysis and Chat
+  const aggregatedContext = knowledgeDocs.map(doc => `[DOCUMENT: ${doc.name}]\n${doc.content}`).join('\n\n---\n\n');
+
+  // Construct Full Dashboard Context for Chatbot
+  const dashboardContext: FullDashboardContext = {
+    leads: MOCK_LEADS as any,
+    customers: MOCK_CUSTOMERS as any,
+    crmStats: CRM_STATS as any,
+    teamStats: TEAM_STATS as any,
+    agents: MOCK_AGENTS as any,
+    currentCallAnalysis: analysisResult,
+    piiSettings
+  };
 
   const addAuditLog = (action: string, resource: string, status: 'SUCCESS' | 'WARNING' | 'CRITICAL' = 'SUCCESS') => {
     const newLog: AuditLog = {
@@ -86,7 +180,7 @@ const App: React.FC = () => {
       const result = await analyzeTelemarketingAudio(
         base64Audio, 
         piiSettings, 
-        referenceText, 
+        aggregatedContext, 
         dictionary,
         mimeType || 'audio/webm'
       );
@@ -309,9 +403,9 @@ const App: React.FC = () => {
               {/* KNOWLEDGE BASE & GLOSSARY */}
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 <div className="xl:col-span-1">
-                  <KnowledgeBase referenceText={referenceText} onContextChange={(txt) => {
-                    setReferenceText(txt);
-                    addAuditLog('KNOWLEDGE_BASE_UPLOAD', 'Document Resource', 'SUCCESS');
+                  <KnowledgeBase documents={knowledgeDocs} onDocumentsChange={(docs) => {
+                    setKnowledgeDocs(docs);
+                    addAuditLog('KNOWLEDGE_BASE_UPDATE', 'Library Resource Change', 'SUCCESS');
                   }} />
                 </div>
 
@@ -393,11 +487,10 @@ const App: React.FC = () => {
         </main>
       </div>
 
-      {(currentView === 'WORKBENCH' || currentView === 'CRM_DASHBOARD') && (status === AnalysisStatus.COMPLETE || currentView === 'CRM_DASHBOARD') && (
-        <ChatAssistant contextData={analysisResult} referenceText={referenceText} />
-      )}
+      <ChatAssistant dashboardContext={dashboardContext} referenceText={aggregatedContext} />
     </div>
   );
 };
 
+// Fixed the error: Module '"file:///App"' has no default export.
 export default App;

@@ -101,7 +101,16 @@ export interface AuditLog {
   ipAddress: string;
 }
 
-// CRM TYPES
+export interface KnowledgeDocument {
+  id: string;
+  name: string;
+  type: string;
+  content: string;
+  size: number;
+  uploadDate: Date;
+}
+
+// CRM TYPES - ENHANCED FOR HYPER-INTELLIGENCE
 export interface Lead {
   id: string;
   name: string;
@@ -110,6 +119,12 @@ export interface Lead {
   status: 'Prospect' | 'Meeting' | 'Proposal' | 'Closing';
   category: 'Hot' | 'Warm' | 'Cold';
   kycStatus: 'Verified' | 'Pending' | 'Rejected';
+  productAffinity: string;
+  propensityReason: string;
+  bestTimeToCall: string;
+  expectedValue: number;
+  lastActivity: string;
+  creditScore?: number;
 }
 
 export interface Customer360 {
@@ -121,10 +136,19 @@ export interface Customer360 {
     deposits: number;
     loans: number;
     investment: number;
+    insurance: number;
   };
   churnRisk: number;
+  riskTrend: 'UP' | 'DOWN' | 'STABLE';
+  riskFactors: string[];
   lastInteraction: string;
-  nba: string; // Next Best Action
+  nba: string;
+  persona: string;
+  engagementScore: number;
+  walletSharePct: number;
+  moodTrend: ('POS' | 'NEU' | 'NEG')[];
+  lifeEventPrediction: string;
+  wealthVelocity: 'RISING' | 'STABLE' | 'DECLINING';
 }
 
 export interface SegmentGroup {
@@ -139,7 +163,8 @@ export interface CRMStats {
   acquisition: {
     totalLeads: number;
     conversionRate: number;
-    funnelData: { stage: string; count: number }[];
+    expectedRevenue: number;
+    funnelData: { stage: string; count: number; dropOff: number }[];
   };
   retention: {
     avgCLV: number;
@@ -164,9 +189,19 @@ export interface AgentSummary {
 export interface TeamStats {
   avgQualityScore: number;
   totalCalls: number;
-  complianceTargetMet: number; // percentage
+  complianceTargetMet: number;
   sentimentDistribution: { name: string; value: number }[];
   competencyAverages: { subject: string; A: number; fullMark: number }[];
+}
+
+export interface FullDashboardContext {
+  leads: Lead[];
+  customers: Customer360[];
+  crmStats: CRMStats;
+  teamStats: TeamStats;
+  agents: AgentSummary[];
+  currentCallAnalysis: CallAnalysis | null;
+  piiSettings: PiiSettings;
 }
 
 export interface ChatMessage {
