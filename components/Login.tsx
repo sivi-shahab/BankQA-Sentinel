@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ShieldCheck, Lock, ArrowRight, Loader2, Building2 } from 'lucide-react';
+import { ShieldCheck, Lock as LockIcon, ArrowRight, Loader2, Building2 } from 'lucide-react';
 
 interface LoginProps {
   onLogin: () => void;
@@ -67,7 +67,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Security Key</label>
                      <div className="relative group">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Lock className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
+                            <LockIcon className="h-5 w-5 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                         </div>
                         <input 
                             type="password" 
@@ -101,7 +101,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
             <div className="mt-8 pt-6 border-t border-slate-100">
                 <div className="flex flex-col items-center gap-2">
                   <div className="flex items-center gap-2 text-xs text-slate-400">
-                      <Lock className="w-3 h-3" />
+                      <LockIcon className="w-3 h-3" />
                       <span>End-to-End Enterprise Encryption</span>
                   </div>
                   <p className="text-[10px] text-slate-300 italic">Secure access portal for OmniAssure Elite instances.</p>

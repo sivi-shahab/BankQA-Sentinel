@@ -20,7 +20,7 @@ import {
   Activity,
   Flame,
   Coins,
-  History,
+  History as HistoryIcon,
   Timer,
   Fingerprint,
   BrainCircuit,

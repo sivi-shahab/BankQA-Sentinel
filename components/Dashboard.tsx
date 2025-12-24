@@ -3,15 +3,15 @@ import React, { useState } from 'react';
 import { 
   TrendingUp, TrendingDown, Minus,
   Activity, FileText, Zap, User, Headset, 
-  ClipboardList, CreditCard, Clock, BarChart3, 
-  Mic, Users, Sparkles, Calendar, Landmark, 
-  Phone, Mail, Briefcase, MapPin, Hash, Heart,
-  Timer, Award, ShieldAlert, ThumbsUp, ThumbsDown,
+  Clock, Mic, Sparkles, Award, ShieldAlert, 
   ExternalLink, CheckCircle2, Loader2, Database,
-  UserCircle, Info
+  UserCircle, Info, Hash, Heart, Phone, Mail, Calendar,
+  Coins, HandCoins, CalendarDays, Percent, Wallet, Tag,
+  AlertCircle, FileCheck, Lock as LockIcon, Timer, 
+  MessageSquare, Users, BarChart3
 } from 'lucide-react';
 import { CallAnalysis } from '../types';
-import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts';
+import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis, PieChart, Pie, Cell } from 'recharts';
 
 interface DashboardProps {
   data: CallAnalysis;
@@ -27,8 +27,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     return '#ef4444'; // Red 500
   };
 
-  const chartData = [
-    { name: 'Score', value: data.qualityScore, fill: getScoreColor(data.qualityScore) }
+  const talkTimeData = [
+    { name: 'Agent', value: data.conversationStats.agentTalkTimePct, fill: '#6366f1' },
+    { name: 'Customer', value: data.conversationStats.customerTalkTimePct, fill: '#10b981' }
   ];
 
   const crmFields = [
@@ -36,26 +37,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     { label: 'Date of Birth', value: data.extractedInfo.dateOfBirth, icon: Calendar, color: 'text-rose-500' },
     { label: 'ID Number (NIK)', value: data.extractedInfo.identityNumber, icon: Hash, color: 'text-slate-600' },
     { label: "Mother's Maiden Name", value: data.extractedInfo.motherMaidenName, icon: Heart, color: 'text-pink-500' },
-    { label: 'Target Account No.', value: data.extractedInfo.bankAccountNumber, icon: CreditCard, color: 'text-amber-600' },
-    { label: 'Target Bank', value: data.extractedInfo.targetBankName, icon: Landmark, color: 'text-blue-600' },
     { label: 'Phone Number', value: data.extractedInfo.phoneNumber, icon: Phone, color: 'text-emerald-600' },
     { label: 'Email Address', value: data.extractedInfo.emailAddress, icon: Mail, color: 'text-cyan-600' },
-    { label: 'Occupation', value: data.extractedInfo.occupation, icon: Briefcase, color: 'text-violet-600' },
-    { label: 'Residential Address', value: data.extractedInfo.residentialAddress, icon: MapPin, color: 'text-orange-600' },
   ];
 
-  const handleExportToCRM = () => {
-    setIsExporting(true);
-    // Simulate API call to enterprise CRM
-    setTimeout(() => {
-        setIsExporting(false);
-        setExportSuccess(true);
-        setTimeout(() => setExportSuccess(false), 3000);
-    }, 1500);
-  };
-
-  const WPM_THRESHOLD = 160;
-  const isTooFast = data.conversationStats.wordsPerMinute > WPM_THRESHOLD;
+  const productFields = [
+    { label: 'Loan Amount', value: data.extractedInfo.loanAmount, icon: Coins, color: 'text-indigo-500' },
+    { label: 'Monthly Installment', value: data.extractedInfo.monthlyInstallment, icon: HandCoins, color: 'text-emerald-500' },
+    { label: 'Tenor', value: data.extractedInfo.installmentDuration, icon: CalendarDays, color: 'text-blue-500' },
+    { label: 'Interest Rate', value: data.extractedInfo.interestRate, icon: Percent, color: 'text-amber-500' },
+    { label: 'Admin Fee', value: data.extractedInfo.adminFee, icon: Wallet, color: 'text-slate-500' },
+    { label: 'Cross-sell', value: data.extractedInfo.crossSellProduct, icon: Tag, color: 'text-violet-500' },
+  ];
 
   const performanceMetrics = [
     { label: 'Empathy', score: data.agentPerformance.empathyScore, color: 'bg-pink-500' },
@@ -64,6 +57,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     { label: 'Product Knowledge', score: data.agentPerformance.productKnowledgeScore, color: 'bg-emerald-500' },
     { label: 'Closing Skill', score: data.agentPerformance.closingSkillScore, color: 'bg-amber-500' },
   ];
+
+  const handleExportToCRM = () => {
+    setIsExporting(true);
+    setTimeout(() => {
+        setIsExporting(false);
+        setExportSuccess(true);
+        setTimeout(() => setExportSuccess(false), 3000);
+    }, 1500);
+  };
 
   const getVerdictStyles = (verdict: string) => {
     switch (verdict) {
@@ -75,81 +77,56 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     }
   };
 
-  const getGenderColor = (gender: string) => {
-    if (gender === 'MALE') return 'bg-blue-100 text-blue-700 border-blue-200';
-    if (gender === 'FEMALE') return 'bg-rose-100 text-rose-700 border-rose-200';
-    return 'bg-slate-100 text-slate-700 border-slate-200';
-  };
-
   return (
     <div className="space-y-6 animate-fade-in font-sans pb-10">
       
-      {/* 1. HERO SECTION: High-Level KPIs */}
+      {/* 1. KEY QUALITY METRICS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        
-        {/* Quality Score - Large Hero Card */}
-        <div className="md:col-span-2 bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden flex items-center justify-between border border-slate-700">
+        <div className="md:col-span-2 bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden flex items-center justify-between border border-slate-800">
            <div className="relative z-10">
-              <h2 className="text-slate-300 text-sm font-semibold uppercase tracking-wider mb-2">Overall Quality Score</h2>
+              <h2 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">OmniScore Quality Audit</h2>
               <div className="flex items-end gap-3">
-                 <span className="text-6xl font-bold tracking-tighter">{data.qualityScore}</span>
-                 <span className="text-xl text-slate-400 mb-2">/ 100</span>
-              </div>
-              <div className={`mt-3 inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${
-                  data.qualityScore >= 90 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 
-                  data.qualityScore >= 75 ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 
-                  'bg-red-500/20 text-red-300 border border-red-500/30'
-              }`}>
-                  {data.qualityScore >= 90 ? 'EXCEPTIONAL' : data.qualityScore >= 75 ? 'SATISFACTORY' : 'ATTENTION NEEDED'}
+                 <span className="text-6xl font-black tracking-tighter">{data.qualityScore}</span>
+                 <span className="text-xl text-slate-500 font-bold mb-2">/100</span>
               </div>
            </div>
            
            <div className="h-32 w-32 relative z-10">
                 <ResponsiveContainer width="100%" height="100%">
-                <RadialBarChart innerRadius="70%" outerRadius="100%" barSize={12} data={chartData} startAngle={90} endAngle={-270}>
+                <RadialBarChart innerRadius="70%" outerRadius="100%" barSize={12} data={[{ value: data.qualityScore, fill: getScoreColor(data.qualityScore) }]} startAngle={90} endAngle={-270}>
                     <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                    <RadialBar background={{ fill: 'rgba(255,255,255,0.1)' }} dataKey="value" cornerRadius={12} />
+                    <RadialBar background={{ fill: 'rgba(255,255,255,0.05)' }} dataKey="value" cornerRadius={12} />
                 </RadialBarChart>
                 </ResponsiveContainer>
            </div>
-           
-           <div className="absolute right-0 top-0 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
         </div>
 
-        {/* Sentiment Analysis */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-center relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Sparkles className="w-16 h-16 text-slate-900" />
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-center relative overflow-hidden group">
+             <div className="flex justify-between items-start mb-2">
+                <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Sentiment Index</h3>
+                <div className="p-1.5 bg-slate-50 rounded-lg text-slate-400 hover:text-indigo-600 cursor-help" title={data.sentimentReasoning}>
+                    <Info className="w-3.5 h-3.5" />
+                </div>
              </div>
-             <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-3">Customer Sentiment</h3>
              <div className="flex items-center gap-3">
                 {data.sentiment === 'POSITIVE' && <TrendingUp className="w-10 h-10 text-emerald-500" />}
                 {data.sentiment === 'NEUTRAL' && <Minus className="w-10 h-10 text-slate-400" />}
                 {data.sentiment === 'NEGATIVE' && <TrendingDown className="w-10 h-10 text-red-500" />}
-                <div>
-                    <span className={`text-2xl font-bold block ${
-                        data.sentiment === 'POSITIVE' ? 'text-emerald-700' : 
-                        data.sentiment === 'NEGATIVE' ? 'text-red-700' : 'text-slate-700'
-                    }`}>
-                        {data.sentiment}
-                    </span>
-                    <span className="text-xs text-slate-400">Analysis based on tone & keywords</span>
+                <div className="min-w-0">
+                    <span className="text-2xl font-black block text-slate-800 leading-none">{data.sentiment}</span>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 truncate">{data.sentimentReasoning}</p>
                 </div>
              </div>
         </div>
 
-        {/* Performance Verdict */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-center relative overflow-hidden group">
-            <h3 className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-3">Agent Verdict</h3>
+        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-center relative overflow-hidden">
+            <h3 className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-3">Agent Verdict</h3>
              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-xl ${getVerdictStyles(data.agentPerformance.verdict)} shadow-lg transition-transform group-hover:scale-110`}>
+                <div className={`p-2.5 rounded-2xl ${getVerdictStyles(data.agentPerformance.verdict)} shadow-lg`}>
                     <Award className="w-6 h-6" />
                 </div>
-                <div>
-                    <span className="text-sm font-black text-slate-800 tracking-tight block">
-                        {data.agentPerformance.verdict.replace('_', ' ')}
-                    </span>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">Based on skills audit</p>
+                <div className="text-xs font-black text-slate-800 tracking-tight block uppercase">
+                    {data.agentPerformance.verdict.replace('_', ' ')}
                 </div>
              </div>
         </div>
@@ -159,123 +136,118 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         
         <div className="lg:col-span-2 space-y-6">
             
-            {/* VOICE PROFILES & GENDER DETECTION */}
-            <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 relative overflow-hidden">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
-                            <UserCircle className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-800">Voice Profile Analysis</h3>
-                            <p className="text-xs text-slate-500">Multimodal Gender & Pitch Detection</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100">
-                                <Headset className={`w-6 h-6 ${data.genderProfile.agentGender === 'FEMALE' ? 'text-rose-500' : 'text-blue-500'}`} />
-                            </div>
-                            <div>
-                                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Agent Gender</span>
-                                <span className={`text-sm font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border ${getGenderColor(data.genderProfile.agentGender)}`}>
-                                    {data.genderProfile.agentGender}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100">
-                                <User className={`w-6 h-6 ${data.genderProfile.customerGender === 'FEMALE' ? 'text-rose-500' : 'text-blue-500'}`} />
-                            </div>
-                            <div>
-                                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Customer Gender</span>
-                                <span className={`text-sm font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border ${getGenderColor(data.genderProfile.customerGender)}`}>
-                                    {data.genderProfile.customerGender}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-4 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex items-start gap-3">
-                    <Info className="w-4 h-4 text-indigo-500 mt-0.5" />
+            {/* 2. CONVERSATIONAL DYNAMICS (TALK TIME / WPM) */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+                <div className="flex items-center justify-between mb-8">
                     <div>
-                        <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Detection Reasoning</h4>
-                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                            {data.genderProfile.reasoning}
-                        </p>
+                        <h3 className="text-lg font-black text-slate-800 tracking-tight">Conversational Dynamics</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Flow & Interaction Analysis</p>
+                    </div>
+                    <div className="flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100">
+                        <Zap className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">{data.conversationStats.effectivenessRating}</span>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* Talk Time Proportion */}
+                    <div className="flex flex-col items-center justify-center">
+                        <div className="h-32 w-32 mb-4 relative">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie data={talkTimeData} innerRadius={35} outerRadius={50} paddingAngle={5} dataKey="value">
+                                        {talkTimeData.map((entry, index) => <Cell key={index} fill={entry.fill} />)}
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex items-center justify-center flex-col">
+                                <span className="text-[9px] font-black text-slate-400 uppercase">Ratio</span>
+                                <span className="text-xs font-black text-slate-800">{data.conversationStats.agentTalkTimePct}%</span>
+                            </div>
+                        </div>
+                        <div className="flex gap-4">
+                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-indigo-500" /> <span className="text-[9px] font-black text-slate-500 uppercase">Agent</span></div>
+                            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-full bg-emerald-500" /> <span className="text-[9px] font-black text-slate-500 uppercase">Cust</span></div>
+                        </div>
+                    </div>
+
+                    {/* Speed / WPM */}
+                    <div className="flex flex-col items-center justify-center border-x border-slate-100 px-8">
+                        <div className="p-4 bg-amber-50 rounded-full mb-3">
+                            <Timer className="w-8 h-8 text-amber-500" />
+                        </div>
+                        <div className="text-center">
+                            <span className="text-3xl font-black text-slate-800 block leading-none">{data.conversationStats.wordsPerMinute}</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Words Per Minute</span>
+                        </div>
+                    </div>
+
+                    {/* Interruptions */}
+                    <div className="flex flex-col items-center justify-center">
+                        <div className="p-4 bg-rose-50 rounded-full mb-3">
+                            <MessageSquare className="w-8 h-8 text-rose-500" />
+                        </div>
+                        <div className="text-center">
+                            <span className="text-3xl font-black text-slate-800 block leading-none">{data.conversationStats.interruptionCount}</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Interruptions</span>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* AGENT PERFORMANCE SCORECARD */}
-            <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
-                            <Award className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-800">Agent Competency Profile</h3>
-                            <p className="text-xs text-slate-500">Soft Skills & Sales Effectiveness</p>
-                        </div>
+            {/* 3. PERFORMANCE DEEP DIVE (STRENGTHS & WEAKNESSES) */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-100">
+                        <BarChart3 className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-black text-slate-800 tracking-tight">Competency Audit</h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Skill Vector Analysis</p>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-5">
-                        {performanceMetrics.map((metric, idx) => (
-                            <div key={idx} className="space-y-2">
-                                <div className="flex justify-between items-center text-xs font-black uppercase tracking-wider text-slate-500">
-                                    <span>{metric.label}</span>
-                                    <span className="text-slate-800 font-mono">{metric.score}%</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div className="space-y-4">
+                        {performanceMetrics.map((m, i) => (
+                            <div key={i} className="space-y-1.5">
+                                <div className="flex justify-between text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                                    <span>{m.label}</span>
+                                    <span className="text-slate-800">{m.score}%</span>
                                 </div>
                                 <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                                    <div 
-                                        className={`h-full ${metric.color} transition-all duration-1000 ease-out shadow-sm`}
-                                        style={{ width: `${metric.score}%` }}
-                                    ></div>
+                                    <div className={`h-full ${m.color} transition-all duration-1000`} style={{ width: `${m.score}%` }}></div>
                                 </div>
                             </div>
                         ))}
                     </div>
 
                     <div className="space-y-6">
-                        <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-2 opacity-10">
-                                <ThumbsUp className="w-12 h-12 text-emerald-900" />
+                        {/* Strengths */}
+                        <div className="bg-emerald-50 rounded-2xl p-5 border border-emerald-100">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Sparkles className="w-4 h-4 text-emerald-600" />
+                                <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Key Strengths</h4>
                             </div>
-                            <h4 className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <TrendingUp className="w-3 h-3" /> Key Strengths
-                            </h4>
                             <ul className="space-y-2">
-                                {data.agentPerformance.strengths.map((str, i) => (
-                                    <li key={i} className="text-xs text-emerald-800 font-medium flex items-start gap-2">
-                                        <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full mt-1 flex-shrink-0"></div>
-                                        {str}
+                                {data.agentPerformance.strengths.map((s, i) => (
+                                    <li key={i} className="flex gap-2 text-xs font-bold text-slate-700">
+                                        <span className="text-emerald-500">•</span> {s}
                                     </li>
                                 ))}
                             </ul>
                         </div>
 
-                        <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-2 opacity-10">
-                                <ThumbsDown className="w-12 h-12 text-rose-900" />
+                        {/* Weaknesses / Improvements */}
+                        <div className="bg-rose-50 rounded-2xl p-5 border border-rose-100">
+                            <div className="flex items-center gap-2 mb-3">
+                                <ShieldAlert className="w-4 h-4 text-rose-600" />
+                                <h4 className="text-[10px] font-black text-rose-600 uppercase tracking-widest">Areas for Improvement</h4>
                             </div>
-                            <h4 className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                <ShieldAlert className="w-3 h-3" /> Focus Areas
-                            </h4>
                             <ul className="space-y-2">
-                                {data.agentPerformance.weaknesses.map((weak, i) => (
-                                    <li key={i} className="text-xs text-rose-800 font-medium flex items-start gap-2">
-                                        <div className="w-1.5 h-1.5 bg-rose-400 rounded-full mt-1 flex-shrink-0"></div>
-                                        {weak}
+                                {data.agentPerformance.weaknesses.map((w, i) => (
+                                    <li key={i} className="flex gap-2 text-xs font-bold text-slate-700">
+                                        <span className="text-rose-500">•</span> {w}
                                     </li>
                                 ))}
                             </ul>
@@ -284,133 +256,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                 </div>
             </div>
 
-            {/* Conversation Metrics & Pace */}
-            <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 relative overflow-hidden">
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2">
-                        <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                            <Clock className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-slate-800">Conversation Metrics</h3>
-                            <p className="text-xs text-slate-500">Share of Voice & Speech Dynamics</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-2">
-                      <div className={`px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-widest ${
-                          data.conversationStats.effectivenessRating === 'OPTIMAL' 
-                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}>
-                          {data.conversationStats.effectivenessRating.replace('_', ' ')}
-                      </div>
-                      <div className={`px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-widest flex items-center gap-1.5 ${
-                          isTooFast ? 'bg-red-50 text-red-700 border-red-200 animate-pulse' : 'bg-slate-50 text-slate-600 border-slate-200'
-                      }`}>
-                          <ShieldAlert className="w-3 h-3" />
-                          {isTooFast ? 'Speaking Too Fast' : 'Normal Pace'}
-                      </div>
-                    </div>
-                </div>
-
-                <div className="mb-8">
-                    <div className="flex justify-between text-sm font-semibold mb-2">
-                        <span className="text-blue-600 flex items-center gap-1"><Headset className="w-4 h-4" /> Agent: {Math.round(data.conversationStats.agentTalkTimePct)}%</span>
-                        <span className="text-emerald-600 flex items-center gap-1">Customer: {Math.round(data.conversationStats.customerTalkTimePct)}% <User className="w-4 h-4" /></span>
-                    </div>
-                    <div className="h-4 w-full bg-emerald-100 rounded-full overflow-hidden flex shadow-inner">
-                        <div 
-                            className="h-full bg-blue-500 shadow-md relative group transition-all duration-1000 ease-out"
-                            style={{ width: `${data.conversationStats.agentTalkTimePct}%` }}
-                        >
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
-                        <div className={`p-2 rounded-xl ${isTooFast ? 'bg-red-100 text-red-600' : 'bg-indigo-100 text-indigo-600'}`}>
-                            <Timer className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Words Per Minute</span>
-                            <div className="flex items-baseline gap-2">
-                                <span className={`text-2xl font-black ${isTooFast ? 'text-red-600' : 'text-slate-800'}`}>
-                                    {data.conversationStats.wordsPerMinute}
-                                </span>
-                                <span className="text-xs font-bold text-slate-400">WPM</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center gap-4">
-                        <div className="p-2 bg-amber-100 text-amber-600 rounded-xl">
-                            <Activity className="w-5 h-5" />
-                        </div>
-                        <div>
-                            <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Interruptions</span>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-2xl font-black text-slate-800">
-                                    {data.conversationStats.interruptionCount}
-                                </span>
-                                <span className="text-xs font-bold text-slate-400">Times</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex gap-3">
-                    <BarChart3 className="w-5 h-5 text-slate-400 mt-0.5" />
-                    <div>
-                        <h4 className="text-sm font-semibold text-slate-700">Analytics Insight</h4>
-                        <p className="text-sm text-slate-600 leading-relaxed mt-1">
-                            {data.conversationStats.feedback}
-                            {isTooFast && (
-                                <span className="block mt-2 text-red-600 font-bold text-xs flex items-center gap-1">
-                                    <ShieldAlert className="w-3.5 h-3.5" /> 
-                                    Coaching Tip: Agent speech rate is too high.
-                                </span>
-                            )}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Transcript */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col h-[600px]">
-                <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                    <div className="flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-slate-600" />
-                        <h3 className="text-lg font-bold text-slate-800">Transcript</h3>
-                    </div>
-                    <span className="text-xs text-slate-400">Diarized & Verified</span>
-                </div>
-                <div className="flex-1 overflow-y-auto pr-2 space-y-4">
+            {/* 4. TRANSCRIPT */}
+            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col h-[500px]">
+                <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2 px-2">
+                    <FileText className="w-5 h-5 text-slate-400" /> Verified Transcript
+                </h3>
+                <div className="flex-1 overflow-y-auto pr-2 space-y-6 custom-scrollbar px-2">
                     {data.transcriptSegments.map((segment, idx) => {
                         const isAgent = segment.speaker.toLowerCase().includes('agent');
                         return (
                             <div key={idx} className={`flex gap-4 ${isAgent ? 'flex-row' : 'flex-row-reverse'}`}>
-                                <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-sm ${
-                                    isAgent ? 'bg-indigo-100 text-indigo-600' : 'bg-emerald-100 text-emerald-600'
-                                }`}>
+                                <div className={`flex-shrink-0 w-10 h-10 rounded-2xl flex items-center justify-center shadow-sm ${isAgent ? 'bg-indigo-600 text-white' : 'bg-white border border-slate-200 text-emerald-600'}`}>
                                     {isAgent ? <Headset className="w-5 h-5" /> : <User className="w-5 h-5" />}
                                 </div>
-                                <div className={`max-w-[75%] rounded-2xl p-4 text-sm shadow-sm ${
-                                    isAgent 
-                                    ? 'bg-indigo-50/50 border border-indigo-100 text-slate-700 rounded-tl-none' 
-                                    : 'bg-white border border-slate-200 text-slate-700 rounded-tr-none'
-                                }`}>
-                                    <div className={`flex items-center justify-between mb-1 ${isAgent ? 'flex-row' : 'flex-row-reverse'}`}>
-                                        <div className={`text-[10px] font-bold uppercase tracking-wider ${
-                                            isAgent ? 'text-indigo-600' : 'text-emerald-600'
-                                        }`}>
-                                            {segment.speaker}
-                                        </div>
-                                        <div className="text-[10px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
-                                            {segment.timestamp}
-                                        </div>
+                                <div className={`max-w-[80%] rounded-2xl p-4 text-sm border shadow-sm ${isAgent ? 'bg-indigo-50 border-indigo-100' : 'bg-white border-slate-200'}`}>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-[9px] font-black uppercase tracking-widest opacity-50">{segment.speaker}</span>
+                                        <span className="text-[9px] font-black opacity-30">{segment.timestamp}</span>
                                     </div>
-                                    <p className="leading-relaxed">{segment.text}</p>
+                                    <p className="font-bold text-slate-700 leading-relaxed">{segment.text}</p>
                                 </div>
                             </div>
                         );
@@ -419,100 +283,91 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
             </div>
         </div>
 
+        {/* 5. SIDEBAR: CRM & PRODUCT DETAILS */}
         <div className="space-y-6">
-            {/* Automated CRM Entry */}
-            <div className="bg-white rounded-2xl p-0 shadow-lg border border-slate-200 overflow-hidden">
-                <div className="bg-slate-900 p-4 flex items-center justify-between">
+            <div className="bg-white rounded-[32px] p-0 shadow-lg border border-slate-200 overflow-hidden flex flex-col">
+                <div className="bg-slate-900 p-6 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Database className="w-5 h-5 text-indigo-400" />
-                        <h3 className="text-white font-bold text-sm tracking-tight">Enterprise CRM Export</h3>
+                        <h3 className="text-white font-black text-xs uppercase tracking-wider">Enterprise Sync</h3>
                     </div>
-                    <div className="flex items-center gap-2">
-                         <div className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
-                         <span className="text-[10px] text-emerald-300 font-black uppercase">Ready</span>
-                    </div>
-                </div>
-                <div className="p-6 space-y-4 bg-slate-50/50">
-                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                        <div className="flex justify-between items-start mb-1">
-                            <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Active Product Offering</label>
-                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                    {data.extractedInfo.customerAgreed ? (
+                         <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500 text-white rounded-full">
+                            <FileCheck className="w-3.5 h-3.5" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">SUCCESS</span>
+                         </div>
+                    ) : (
+                        <div className="flex items-center gap-1.5 px-3 py-1 bg-rose-500 text-white rounded-full">
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            <span className="text-[9px] font-black uppercase tracking-widest">REJECTED</span>
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
-                            <Zap className="w-4 h-4 text-indigo-600" />
-                            <span className="text-lg font-black text-slate-900 tracking-tight">{data.extractedInfo?.productName || 'N/A'}</span>
+                    )}
+                </div>
+                
+                <div className="p-6 space-y-6 bg-slate-50/50 flex-1">
+                    <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm">
+                        <label className="text-[9px] font-black text-indigo-500 uppercase tracking-widest block mb-2">Primary Product</label>
+                        <div className="flex items-center gap-3 font-black text-slate-900 text-lg">
+                            <Tag className="w-5 h-5 text-indigo-600" />
+                            {data.extractedInfo?.productName || 'N/A'}
                         </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 gap-3 mt-4">
+                    <div className="space-y-3">
+                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest px-1">Customer Profile</label>
                         {crmFields.map((field, idx) => (
-                            <div key={idx} className="group flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-100 hover:border-indigo-200 transition-all shadow-sm">
-                                <div className="flex items-center gap-3">
-                                    <div className={`p-1.5 rounded-lg bg-slate-50 ${field.color}`}>
-                                        <field.icon className="w-3.5 h-3.5" />
+                            <div key={idx} className="flex items-center justify-between p-3.5 rounded-2xl bg-white border border-slate-100 shadow-sm">
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                    <div className={`p-2 rounded-xl bg-slate-50 ${field.color}`}>
+                                        <field.icon className="w-4 h-4" />
                                     </div>
-                                    <div className="flex flex-col">
-                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
-                                            {field.label}
-                                        </label>
-                                        <div className={`text-xs font-bold tracking-tight ${field.value === 'Tidak disebutkan' ? 'text-slate-300 italic' : 'text-slate-800'}`}>
-                                            {field.value}
-                                        </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <label className="text-[8px] font-black text-slate-400 uppercase mb-0.5">{field.label}</label>
+                                        <div className="text-[11px] font-black text-slate-800 truncate">{field.value}</div>
                                     </div>
                                 </div>
-                                <CheckCircle2 className={`w-3 h-3 ${field.value === 'Tidak disebutkan' ? 'text-slate-100' : 'text-emerald-500'}`} />
                             </div>
                         ))}
                     </div>
+
+                    <div className="pt-6 border-t border-slate-200">
+                        <label className="text-[9px] font-black text-indigo-500 uppercase tracking-widest block mb-4">Financial Specifics</label>
+                        {data.extractedInfo.customerAgreed ? (
+                            <div className="grid grid-cols-2 gap-3">
+                                {productFields.map((field, idx) => (
+                                    <div key={idx} className="p-3.5 bg-white rounded-2xl border border-slate-100 shadow-sm flex flex-col gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <field.icon className={`w-3.5 h-3.5 ${field.color}`} />
+                                            <label className="text-[8px] font-black text-slate-400 uppercase">{field.label}</label>
+                                        </div>
+                                        <div className="text-[11px] font-black text-slate-800 truncate">
+                                            {field.value || 'N/A'}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-10 bg-slate-100 rounded-3xl border border-dashed border-slate-300 text-center">
+                                <LockIcon className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                                <p className="text-[10px] font-black text-slate-400 uppercase leading-tight">Sync Locked.<br/>No Customer Agreement.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div className="bg-white p-4 border-t border-slate-100">
+                
+                <div className="bg-white p-6 border-t border-slate-100">
                     <button 
                         onClick={handleExportToCRM}
                         disabled={isExporting}
-                        className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md ${
+                        className={`w-full py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-xl ${
                             exportSuccess 
-                            ? 'bg-emerald-500 text-white' 
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95'
+                            ? 'bg-emerald-500 text-white shadow-emerald-200' 
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 shadow-indigo-100'
                         }`}
                     >
-                        {isExporting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : exportSuccess ? (
-                            <>
-                                <CheckCircle2 className="w-4 h-4" /> Export Complete
-                            </>
-                        ) : (
-                            <>
-                                <ExternalLink className="w-4 h-4" /> Push to Enterprise CRM
-                            </>
-                        )}
+                        {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : exportSuccess ? <CheckCircle2 className="w-5 h-5" /> : <><ExternalLink className="w-5 h-5" /> COMMIT TO CRM</>}
                     </button>
-                    <p className="text-center text-[9px] text-slate-400 font-bold uppercase mt-3 tracking-tighter">
-                        Last sync: Never • Auto-detect active
-                    </p>
-                </div>
-            </div>
-
-            {/* Next Best Actions (Coaching) */}
-            <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 shadow-xl text-white relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <Zap className="w-24 h-24" />
-                </div>
-                <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Sparkles className="w-5 h-5 text-yellow-300" />
-                        <h3 className="text-lg font-bold">Coaching Points</h3>
-                    </div>
-                    <ul className="space-y-4">
-                        {data.nextBestActions.map((action, idx) => (
-                            <li key={idx} className="flex gap-3 text-sm bg-white/10 p-3 rounded-lg backdrop-blur-sm border border-white/10 hover:bg-white/20 transition-colors">
-                                <span className="flex-shrink-0 w-6 h-6 bg-white/20 rounded-full flex items-center justify-center font-bold text-xs text-yellow-300 border border-white/10">
-                                    {idx + 1}
-                                </span>
-                                <span className="leading-snug opacity-90">{action}</span>
-                            </li>
-                        ))}
-                    </ul>
+                    <p className="text-[8px] text-center text-slate-300 mt-4 font-black tracking-widest uppercase">Secured by OmniAssure FinAI</p>
                 </div>
             </div>
         </div>

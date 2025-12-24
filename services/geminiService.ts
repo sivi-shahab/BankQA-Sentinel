@@ -20,6 +20,7 @@ const analysisSchema = {
     summary: { type: Type.STRING },
     qualityScore: { type: Type.INTEGER },
     sentiment: { type: Type.STRING, enum: ["POSITIVE", "NEUTRAL", "NEGATIVE"] },
+    sentimentReasoning: { type: Type.STRING },
     nextBestActions: { type: Type.ARRAY, items: { type: Type.STRING } },
     complianceChecklist: {
       type: Type.ARRAY,
@@ -59,9 +60,22 @@ const analysisSchema = {
         phoneNumber: { type: Type.STRING },
         emailAddress: { type: Type.STRING },
         occupation: { type: Type.STRING },
-        residentialAddress: { type: Type.STRING }
+        residentialAddress: { type: Type.STRING },
+        customerAgreed: { type: Type.BOOLEAN },
+        loanAmount: { type: Type.STRING },
+        monthlyInstallment: { type: Type.STRING },
+        installmentDuration: { type: Type.STRING },
+        adminFee: { type: Type.STRING },
+        interestRate: { type: Type.STRING },
+        crossSellProduct: { type: Type.STRING }
       },
-      required: ["productName", "customerName", "dateOfBirth", "identityNumber", "motherMaidenName", "bankAccountNumber", "targetBankName", "contributionAmount", "phoneNumber", "emailAddress", "occupation", "residentialAddress"]
+      required: [
+        "productName", "customerName", "dateOfBirth", "identityNumber", 
+        "motherMaidenName", "bankAccountNumber", "targetBankName", 
+        "contributionAmount", "phoneNumber", "emailAddress", "occupation", 
+        "residentialAddress", "customerAgreed", "loanAmount", "monthlyInstallment",
+        "installmentDuration", "adminFee", "interestRate", "crossSellProduct"
+      ]
     },
     conversationStats: {
       type: Type.OBJECT,
@@ -99,7 +113,7 @@ const analysisSchema = {
       required: ["agentGender", "customerGender", "reasoning"]
     }
   },
-  required: ["transcriptSegments", "summary", "qualityScore", "sentiment", "nextBestActions", "complianceChecklist", "glossaryUsed", "extractedInfo", "conversationStats", "agentPerformance", "genderProfile"]
+  required: ["transcriptSegments", "summary", "qualityScore", "sentiment", "sentimentReasoning", "nextBestActions", "complianceChecklist", "glossaryUsed", "extractedInfo", "conversationStats", "agentPerformance", "genderProfile"]
 };
 
 export const analyzeTelemarketingAudio = async (
@@ -113,21 +127,19 @@ export const analyzeTelemarketingAudio = async (
   
   try {
     let systemPrompt = `You are a Senior Quality Control Auditor for a major bank. Analyze this telemarketing call recording.
-    1. Transcribe accurately. ${piiSettings.enableDiarization ? 'Use speaker diarization (Agent vs Customer).' : 'Transcribe as single flow if diarization is disabled.'}
-    2. Provide timestamps (MM:SS).
-    3. Evaluate banking compliance and quality (0-100).
-    4. Extract CRM data into the specific 'extractedInfo' object.
-    5. ${piiSettings.enableGenderDetection ? 'Detect genders for both speakers based on vocal characteristics and linguistics.' : 'Return UNKNOWN for genders as detection is disabled.'}
+    1. Transcribe accurately with speaker labels (Agent vs Customer).
+    2. Evaluation Metrics:
+       - Calculate exact Talk Time percentages for both speakers.
+       - Calculate Words Per Minute (WPM) based on transcript length and duration.
+       - Count interruptions (overlapping speech).
+    3. Performance Audit:
+       - List specific Strengths (what they did well).
+       - List specific Weaknesses/Improvement Areas (missed scripts, compliance errors, tone issues).
+    4. Compliance: Map against OJK & BI regulations.
+    5. CRM Data Extraction: Parse all loan/product details precisely.
     
     *** PRIVACY & REDACTION RULES ***
-    Check the following granular redaction settings and replace sensitive values with [REDACTED] if enabled:
-    - Redact Email: ${piiSettings.redactEmail ? 'YES' : 'NO'}
-    - Redact NIK/ID: ${piiSettings.redactNIK ? 'YES' : 'NO'}
-    - Redact Mother's Maiden Name: ${piiSettings.redactMotherName ? 'YES' : 'NO'}
-    - Redact Customer Name: ${piiSettings.redactCustomerName ? 'YES' : 'NO'}
-    - Redact Phone: ${piiSettings.redactPhone ? 'YES' : 'NO'}
-    - Redact DOB: ${piiSettings.redactDOB ? 'YES' : 'NO'}
-    - Redact Address: ${piiSettings.redactAddress ? 'YES' : 'NO'}
+    Follow piiSettings for redaction.
     `;
 
     if (referenceText) {
@@ -135,9 +147,9 @@ export const analyzeTelemarketingAudio = async (
     }
 
     if (dictionary.length > 0) {
-      systemPrompt += `\n\n*** CUSTOM DICTIONARY / GLOSSARY ***\nUse these terms to identify specific banking terminology:\n`;
+      systemPrompt += `\n\n*** CUSTOM DICTIONARY ***\nIdentify these specific terms:\n`;
       dictionary.forEach(item => {
-        systemPrompt += `- ${item.term}: ${item.definition} (Context: ${item.context})\n`;
+        systemPrompt += `- ${item.term}: ${item.definition}\n`;
       });
     }
 
@@ -174,25 +186,6 @@ export const sendChatQuery = async (
   try {
     const systemInstruction = `You are the OmniAssure FinAI Intelligence Assistant.
     You have absolute access to all data on the dashboard for deep context analysis.
-    
-    *** DASHBOARD DATA (SIMULATED DB) ***
-    LEADS: ${JSON.stringify(dashboardContext.leads)}
-    CUSTOMERS: ${JSON.stringify(dashboardContext.customers)}
-    CRM_KPIs: ${JSON.stringify(dashboardContext.crmStats)}
-    TEAM_KPIs: ${JSON.stringify(dashboardContext.teamStats)}
-    AGENTS: ${JSON.stringify(dashboardContext.agents)}
-    CURRENT_AUDIT: ${dashboardContext.currentCallAnalysis ? JSON.stringify(dashboardContext.currentCallAnalysis) : 'No call currently loaded.'}
-    PRIVACY_SETTINGS: ${JSON.stringify(dashboardContext.piiSettings)}
-    RAG_REFERENCE: ${referenceText || 'No reference documents uploaded.'}
-    
-    *** YOUR GOAL ***
-    1. Answer questions about specific customer data (e.g., 'Who is Bapak Ahmad?').
-    2. Analyze churn risks based on the Retention data provided.
-    3. Summarize team performance or identify the top performing agent.
-    4. If a call is loaded, answer questions about its transcript or compliance score.
-    5. Always be professional, bank-grade, and precise.
-    6. Mention specific IDs or Tiers where relevant.
-    7. You understand both Indonesian and English.
     `;
 
     const chat = ai.chats.create({

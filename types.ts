@@ -30,6 +30,14 @@ export interface ExtractedInfo {
   emailAddress: string;
   occupation: string;
   residentialAddress: string;
+  // Enhanced Banking Parameters
+  customerAgreed: boolean;
+  loanAmount: string;
+  monthlyInstallment: string;
+  installmentDuration: string;
+  adminFee: string;
+  interestRate: string;
+  crossSellProduct: string;
 }
 
 export interface ConversationStats {
@@ -63,6 +71,7 @@ export interface CallAnalysis {
   summary: string;
   qualityScore: number;
   sentiment: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
+  sentimentReasoning: string;
   nextBestActions: string[];
   complianceChecklist: ComplianceItem[];
   glossaryUsed: GlossaryTerm[];

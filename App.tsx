@@ -32,10 +32,12 @@ import {
   Briefcase,
   Activity,
   ShieldAlert,
-  Lock,
+  Lock as LockIcon,
   ArrowUpRight,
   Globe,
-  FileText
+  FileText,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 
 // Shared Mock Data for Context Injection
@@ -52,19 +54,25 @@ const MOCK_CUSTOMERS = [
     id: 'C001', name: 'Bapak Ahmad', tier: 'Priority', 
     portfolio: { savings: 150000000, deposits: 500000000, loans: 0, investment: 120000000, insurance: 50000000 },
     churnRisk: 12, riskTrend: 'DOWN', riskFactors: ['Stable Balance', 'Active Investment'],
-    lastInteraction: '2 days ago', nba: 'Offer Reksadana Saham'
+    lastInteraction: '2 days ago', nba: 'Offer Reksadana Saham',
+    persona: 'Wealth Builder', engagementScore: 94, walletSharePct: 65, moodTrend: ['POS', 'POS', 'POS'],
+    lifeEventPrediction: 'Retirement (85%)', wealthVelocity: 'RISING'
   },
   { 
     id: 'C002', name: 'Ibu Maya', tier: 'Gold', 
     portfolio: { savings: 45000000, deposits: 0, loans: 250000000, investment: 0, insurance: 10000000 },
     churnRisk: 68, riskTrend: 'UP', riskFactors: ['Large Withdrawal', 'Account Inactivity', 'Loan Delinquency'],
-    lastInteraction: '1 month ago', nba: 'Loan Restructuring Call'
+    lastInteraction: '1 month ago', nba: 'Loan Restructuring Call',
+    persona: 'Over-leveraged', engagementScore: 24, walletSharePct: 15, moodTrend: ['NEG', 'NEG'],
+    lifeEventPrediction: 'Downsizing (60%)', wealthVelocity: 'DECLINING'
   },
   { 
     id: 'C003', name: 'Bapak Kevin', tier: 'Silver', 
     portfolio: { savings: 12000000, deposits: 10000000, loans: 0, investment: 0, insurance: 0 },
     churnRisk: 35, riskTrend: 'STABLE', riskFactors: ['Minimal Activity', 'Competitor Interest Detected'],
-    lastInteraction: '1 week ago', nba: 'Credit Card Cross-sell'
+    lastInteraction: '1 week ago', nba: 'Credit Card Cross-sell',
+    persona: 'Young Saver', engagementScore: 45, walletSharePct: 40, moodTrend: ['NEU', 'POS'],
+    lifeEventPrediction: 'Education Loan (75%)', wealthVelocity: 'STABLE'
   },
 ];
 
@@ -72,12 +80,13 @@ const CRM_STATS = {
   acquisition: {
     totalLeads: 452,
     conversionRate: 18.5,
+    expectedRevenue: 14200000000,
     funnelData: [
-      { stage: 'Leads', count: 452 },
-      { stage: 'Prospect', count: 310 },
-      { stage: 'Meeting', count: 185 },
-      { stage: 'Proposal', count: 92 },
-      { stage: 'Closing', count: 48 },
+      { stage: 'Leads', count: 452, dropOff: 0 },
+      { stage: 'Prospect', count: 310, dropOff: 31 },
+      { stage: 'Meeting', count: 185, dropOff: 40 },
+      { stage: 'Proposal', count: 92, dropOff: 50 },
+      { stage: 'Closing', count: 48, dropOff: 47 },
     ]
   },
   retention: {
@@ -118,7 +127,6 @@ const MOCK_AGENTS = [
   { id: '3', name: 'Aria Stark', avatar: 'AS', avgScore: 82, callsCount: 96, complianceRate: 92, topSkill: 'Persuasion', status: 'Active' },
 ];
 
-// Define main App component
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentView, setCurrentView] = useState<AppView>('WORKBENCH');
@@ -127,7 +135,6 @@ const App: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<CallAnalysis | null>(null);
   const [knowledgeDocs, setKnowledgeDocs] = useState<KnowledgeDocument[]>([]);
   
-  // Management States
   const [piiSettings, setPiiSettings] = useState<PiiSettings>({
     redactEmail: true,
     redactNIK: true,
@@ -146,10 +153,8 @@ const App: React.FC = () => {
     { id: '2', timestamp: new Date(Date.now() - 500000), user: 'Enterprise Officer', action: 'PII_CONFIG_UPDATE', resource: 'Data Privacy Policy', status: 'WARNING', ipAddress: '192.168.1.104' }
   ]);
 
-  // Construct Aggregated Context for Analysis and Chat
   const aggregatedContext = knowledgeDocs.map(doc => `[DOCUMENT: ${doc.name}]\n${doc.content}`).join('\n\n---\n\n');
 
-  // Construct Full Dashboard Context for Chatbot
   const dashboardContext: FullDashboardContext = {
     leads: MOCK_LEADS as any,
     customers: MOCK_CUSTOMERS as any,
@@ -309,10 +314,33 @@ const App: React.FC = () => {
                   <AudioRecorder onAudioReady={handleAudioReady} status={status} />
                 </div>
                 {status === AnalysisStatus.COMPLETE && analysisResult && (
-                  <>
+                  <div className="space-y-6">
                     <ConversationResume summary={analysisResult.summary} />
                     <ComplianceAudit checklist={analysisResult.complianceChecklist} />
-                  </>
+                    
+                    {/* COACHING POINTS */}
+                    <div className="bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl p-6 shadow-xl text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-4 opacity-10">
+                            <Zap className="w-16 h-16 text-white" />
+                        </div>
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Sparkles className="w-5 h-5 text-yellow-300" />
+                                <h3 className="text-sm font-black uppercase tracking-wider">Coaching Points</h3>
+                            </div>
+                            <ul className="space-y-3">
+                                {analysisResult.nextBestActions.map((action, idx) => (
+                                    <li key={idx} className="flex gap-3 text-xs bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10 hover:bg-white/20 transition-colors">
+                                        <span className="flex-shrink-0 w-5 h-5 bg-white/20 rounded-full flex items-center justify-center font-bold text-[10px] text-yellow-300 border border-white/10">
+                                            {idx + 1}
+                                        </span>
+                                        <span className="leading-snug opacity-95">{action}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    </div>
+                  </div>
                 )}
               </div>
               <div className="flex-1 min-w-0">
@@ -338,7 +366,7 @@ const App: React.FC = () => {
                 <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm space-y-8">
                   <div className="flex items-center gap-3">
                     <div className="p-3 bg-indigo-50 text-indigo-600 rounded-2xl shadow-sm border border-indigo-100">
-                      <Lock className="w-6 h-6" />
+                      <LockIcon className="w-6 h-6" />
                     </div>
                     <div>
                       <h3 className="text-xl font-black text-slate-800 tracking-tight">Data Governance & Privacy</h3>
@@ -350,7 +378,7 @@ const App: React.FC = () => {
                     {[
                       { label: 'Email Redaction', key: 'redactEmail', icon: EyeOff },
                       { label: 'NIK/ID Masking', key: 'redactNIK', icon: ShieldAlert },
-                      { label: 'Mother\'s Name Redact', key: 'redactMotherName', icon: Lock },
+                      { label: 'Mother\'s Name Redact', key: 'redactMotherName', icon: LockIcon },
                       { label: 'Customer Name PII', key: 'redactCustomerName', icon: User },
                       { label: 'Phone Redaction', key: 'redactPhone', icon: Briefcase },
                       { label: 'DOB Masking', key: 'redactDOB', icon: Activity },
@@ -370,37 +398,9 @@ const App: React.FC = () => {
                       </div>
                     ))}
                   </div>
-
-                  <div className="pt-4 border-t border-slate-100 flex flex-col md:flex-row gap-4">
-                    <div className="flex-1 p-5 bg-emerald-50/50 rounded-2xl border border-emerald-100">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-sm font-black text-emerald-800">Advanced Diarization</h4>
-                        <button 
-                          onClick={() => togglePii('enableDiarization')}
-                          className={`w-10 h-5 rounded-full relative transition-all ${piiSettings.enableDiarization ? 'bg-emerald-500 shadow-sm' : 'bg-slate-200'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${piiSettings.enableDiarization ? 'left-5.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-                      <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-tight leading-relaxed">Splits Agent vs Customer audio streams automatically.</p>
-                    </div>
-                    <div className="flex-1 p-5 bg-blue-50/50 rounded-2xl border border-blue-100">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-sm font-black text-blue-800">Gender Intelligence</h4>
-                        <button 
-                          onClick={() => togglePii('enableGenderDetection')}
-                          className={`w-10 h-5 rounded-full relative transition-all ${piiSettings.enableGenderDetection ? 'bg-blue-500 shadow-sm' : 'bg-slate-200'}`}
-                        >
-                          <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all ${piiSettings.enableGenderDetection ? 'left-5.5' : 'left-0.5'}`} />
-                        </button>
-                      </div>
-                      <p className="text-[10px] text-blue-600 font-bold uppercase tracking-tight leading-relaxed">Bio-metric voice detection for customer identification.</p>
-                    </div>
-                  </div>
                 </div>
               </div>
-
-              {/* KNOWLEDGE BASE & GLOSSARY */}
+              
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
                 <div className="xl:col-span-1">
                   <KnowledgeBase documents={knowledgeDocs} onDocumentsChange={(docs) => {
@@ -420,63 +420,18 @@ const App: React.FC = () => {
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Training AI for Custom Lingo</p>
                       </div>
                     </div>
-                    <div className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest">
-                      {dictionary.length} Terms Defined
-                    </div>
                   </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 bg-slate-50 p-6 rounded-[24px] border border-slate-100 shadow-inner">
-                    <input 
-                      value={newDictItem.term}
-                      onChange={(e) => setNewDictItem(prev => ({ ...prev, term: e.target.value }))}
-                      placeholder="Term (e.g., KPR_FIX_5Y)"
-                      className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                    <input 
-                      value={newDictItem.definition}
-                      onChange={(e) => setNewDictItem(prev => ({ ...prev, definition: e.target.value }))}
-                      placeholder="Definition"
-                      className="px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500"
-                    />
-                    <div className="flex gap-2">
-                      <input 
-                        value={newDictItem.context}
-                        onChange={(e) => setNewDictItem(prev => ({ ...prev, context: e.target.value }))}
-                        placeholder="Usage Context"
-                        className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500"
-                      />
-                      <button 
-                        onClick={addDictionaryItem} 
-                        className="bg-slate-900 text-white p-2.5 rounded-xl hover:bg-black transition-colors shadow-lg"
-                      >
-                        <Plus className="w-5 h-5" />
-                      </button>
-                    </div>
-                  </div>
-
                   <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3">
-                    {dictionary.length === 0 ? (
-                      <div className="h-full flex flex-col items-center justify-center text-slate-300 opacity-50 py-10">
-                        <BookMarked className="w-12 h-12 mb-4" />
-                        <p className="text-xs font-black uppercase tracking-widest">Glossary is empty</p>
-                      </div>
-                    ) : (
-                      dictionary.map((item) => (
+                    {dictionary.map((item) => (
                         <div key={item.id} className="flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-amber-200 group transition-all">
                           <div className="flex-1 grid grid-cols-3 gap-6">
                             <div className="font-black text-amber-600 text-xs tracking-tight uppercase">{item.term}</div>
                             <div className="text-slate-600 text-[11px] font-bold leading-relaxed">{item.definition}</div>
-                            <div className="text-slate-400 text-[10px] italic font-medium truncate">Context: {item.context}</div>
+                            <div className="text-slate-400 text-[10px] italic font-medium">Context: {item.context}</div>
                           </div>
-                          <button 
-                            onClick={() => removeDictionaryItem(item.id)} 
-                            className="p-2.5 text-slate-200 hover:text-red-500 hover:bg-red-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          <button onClick={() => removeDictionaryItem(item.id)} className="p-2.5 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-4 h-4" /></button>
                         </div>
-                      ))
-                    )}
+                    ))}
                   </div>
                 </div>
               </div>
@@ -492,5 +447,4 @@ const App: React.FC = () => {
   );
 };
 
-// Fixed the error: Module '"file:///App"' has no default export.
 export default App;
