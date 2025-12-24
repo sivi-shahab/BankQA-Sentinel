@@ -8,7 +8,8 @@ import {
   UserCircle, Info, Hash, Heart, Phone, Mail, Calendar,
   Coins, HandCoins, CalendarDays, Percent, Wallet, Tag,
   AlertCircle, FileCheck, Lock as LockIcon, Timer, 
-  MessageSquare, Users, BarChart3
+  MessageSquare, Users, BarChart3, Fingerprint,
+  Users2
 } from 'lucide-react';
 import { CallAnalysis } from '../types';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis, PieChart, Pie, Cell } from 'recharts';
@@ -77,6 +78,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     }
   };
 
+  const getGenderColor = (gender: string) => {
+    if (gender === 'MALE') return 'text-indigo-600 bg-indigo-50 border-indigo-100';
+    if (gender === 'FEMALE') return 'text-rose-600 bg-rose-50 border-rose-100';
+    return 'text-slate-400 bg-slate-50 border-slate-100';
+  };
+
   return (
     <div className="space-y-6 animate-fade-in font-sans pb-10">
       
@@ -135,6 +142,58 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         <div className="lg:col-span-2 space-y-6">
+
+            {/* VOICE IDENTITY & PROFILE (GENDER DETECTION) */}
+            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
+                <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-3">
+                        <div className="p-3 bg-slate-100 rounded-2xl">
+                            <Fingerprint className="w-5 h-5 text-slate-600" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-black text-slate-800 tracking-tight">Voice Profile Analysis</h3>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Biometric & Gender Identification</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className={`p-5 rounded-2xl border flex items-center justify-between transition-all ${getGenderColor(data.genderProfile.agentGender)}`}>
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-white rounded-xl shadow-sm">
+                                <Headset className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Audit Subject (Agent)</span>
+                                <h4 className="text-sm font-black tracking-tight uppercase">{data.genderProfile.agentGender}</h4>
+                            </div>
+                        </div>
+                        <CheckCircle2 className="w-5 h-5 opacity-20" />
+                    </div>
+
+                    <div className={`p-5 rounded-2xl border flex items-center justify-between transition-all ${getGenderColor(data.genderProfile.customerGender)}`}>
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-white rounded-xl shadow-sm">
+                                <User className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Counterparty (Customer)</span>
+                                <h4 className="text-sm font-black tracking-tight uppercase">{data.genderProfile.customerGender}</h4>
+                            </div>
+                        </div>
+                        <Users2 className="w-5 h-5 opacity-20" />
+                    </div>
+                </div>
+                
+                {data.genderProfile.reasoning && (
+                    <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100">
+                        <p className="text-[10px] text-slate-500 font-medium italic">
+                            <span className="font-black uppercase mr-2">Analysis:</span>
+                            {data.genderProfile.reasoning}
+                        </p>
+                    </div>
+                )}
+            </div>
             
             {/* 2. CONVERSATIONAL DYNAMICS (TALK TIME / WPM) */}
             <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200">
