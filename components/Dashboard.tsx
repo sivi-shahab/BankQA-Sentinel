@@ -1,12 +1,14 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   TrendingUp, TrendingDown, Minus,
   Activity, FileText, Zap, User, Headset, 
   ClipboardList, CreditCard, Clock, BarChart3, 
   Mic, Users, Sparkles, Calendar, Landmark, 
   Phone, Mail, Briefcase, MapPin, Hash, Heart,
-  Timer, Award, ShieldAlert, ThumbsUp, ThumbsDown
+  Timer, Award, ShieldAlert, ThumbsUp, ThumbsDown,
+  ExternalLink, CheckCircle2, Loader2, Database,
+  UserCircle, Info
 } from 'lucide-react';
 import { CallAnalysis } from '../types';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts';
@@ -16,6 +18,9 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState(false);
+
   const getScoreColor = (score: number) => {
     if (score >= 90) return '#10b981'; // Emerald 500
     if (score >= 75) return '#f59e0b'; // Amber 500
@@ -39,6 +44,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     { label: 'Residential Address', value: data.extractedInfo.residentialAddress, icon: MapPin, color: 'text-orange-600' },
   ];
 
+  const handleExportToCRM = () => {
+    setIsExporting(true);
+    // Simulate API call to enterprise CRM
+    setTimeout(() => {
+        setIsExporting(false);
+        setExportSuccess(true);
+        setTimeout(() => setExportSuccess(false), 3000);
+    }, 1500);
+  };
+
   const WPM_THRESHOLD = 160;
   const isTooFast = data.conversationStats.wordsPerMinute > WPM_THRESHOLD;
 
@@ -58,6 +73,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         case 'NEEDS_COACHING': return 'bg-red-500 text-white shadow-red-200';
         default: return 'bg-slate-500 text-white';
     }
+  };
+
+  const getGenderColor = (gender: string) => {
+    if (gender === 'MALE') return 'bg-blue-100 text-blue-700 border-blue-200';
+    if (gender === 'FEMALE') return 'bg-rose-100 text-rose-700 border-rose-200';
+    return 'bg-slate-100 text-slate-700 border-slate-200';
   };
 
   return (
@@ -138,6 +159,61 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         
         <div className="lg:col-span-2 space-y-6">
             
+            {/* VOICE PROFILES & GENDER DETECTION */}
+            <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-rose-50 text-rose-600 rounded-lg">
+                            <UserCircle className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-800">Voice Profile Analysis</h3>
+                            <p className="text-xs text-slate-500">Multimodal Gender & Pitch Detection</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100">
+                                <Headset className={`w-6 h-6 ${data.genderProfile.agentGender === 'FEMALE' ? 'text-rose-500' : 'text-blue-500'}`} />
+                            </div>
+                            <div>
+                                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Agent Gender</span>
+                                <span className={`text-sm font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border ${getGenderColor(data.genderProfile.agentGender)}`}>
+                                    {data.genderProfile.agentGender}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-white rounded-xl shadow-sm border border-slate-100">
+                                <User className={`w-6 h-6 ${data.genderProfile.customerGender === 'FEMALE' ? 'text-rose-500' : 'text-blue-500'}`} />
+                            </div>
+                            <div>
+                                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Customer Gender</span>
+                                <span className={`text-sm font-black uppercase tracking-wider px-2 py-0.5 rounded-lg border ${getGenderColor(data.genderProfile.customerGender)}`}>
+                                    {data.genderProfile.customerGender}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="mt-4 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100 flex items-start gap-3">
+                    <Info className="w-4 h-4 text-indigo-500 mt-0.5" />
+                    <div>
+                        <h4 className="text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1">Detection Reasoning</h4>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                            {data.genderProfile.reasoning}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             {/* AGENT PERFORMANCE SCORECARD */}
             <div className="bg-white rounded-2xl p-6 shadow-md border border-slate-100">
                 <div className="flex items-center justify-between mb-6">
@@ -324,10 +400,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                                     ? 'bg-indigo-50/50 border border-indigo-100 text-slate-700 rounded-tl-none' 
                                     : 'bg-white border border-slate-200 text-slate-700 rounded-tr-none'
                                 }`}>
-                                    <div className={`text-[10px] font-bold mb-1 uppercase tracking-wider ${
-                                        isAgent ? 'text-indigo-600' : 'text-emerald-600'
-                                    }`}>
-                                        {segment.speaker}
+                                    <div className={`flex items-center justify-between mb-1 ${isAgent ? 'flex-row' : 'flex-row-reverse'}`}>
+                                        <div className={`text-[10px] font-bold uppercase tracking-wider ${
+                                            isAgent ? 'text-indigo-600' : 'text-emerald-600'
+                                        }`}>
+                                            {segment.speaker}
+                                        </div>
+                                        <div className="text-[10px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-100">
+                                            {segment.timestamp}
+                                        </div>
                                     </div>
                                     <p className="leading-relaxed">{segment.text}</p>
                                 </div>
@@ -343,35 +424,72 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
             <div className="bg-white rounded-2xl p-0 shadow-lg border border-slate-200 overflow-hidden">
                 <div className="bg-slate-900 p-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <ClipboardList className="w-5 h-5 text-indigo-400" />
-                        <h3 className="text-white font-bold">Auto-Captured Data</h3>
+                        <Database className="w-5 h-5 text-indigo-400" />
+                        <h3 className="text-white font-bold text-sm tracking-tight">Enterprise CRM Export</h3>
+                    </div>
+                    <div className="flex items-center gap-2">
+                         <div className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse"></div>
+                         <span className="text-[10px] text-emerald-300 font-black uppercase">Ready</span>
                     </div>
                 </div>
-                <div className="p-6 space-y-4">
-                    <div className="bg-indigo-50 rounded-xl p-4 border border-indigo-100">
-                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Active Product Offering</label>
+                <div className="p-6 space-y-4 bg-slate-50/50">
+                    <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                        <div className="flex justify-between items-start mb-1">
+                            <label className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Active Product Offering</label>
+                            <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                        </div>
                         <div className="flex items-center gap-2 mt-1">
                             <Zap className="w-4 h-4 text-indigo-600" />
-                            <span className="text-lg font-black text-indigo-900 tracking-tight">{data.extractedInfo?.productName || 'N/A'}</span>
+                            <span className="text-lg font-black text-slate-900 tracking-tight">{data.extractedInfo?.productName || 'N/A'}</span>
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 gap-4 mt-4">
+                    
+                    <div className="grid grid-cols-1 gap-3 mt-4">
                         {crmFields.map((field, idx) => (
-                            <div key={idx} className="group flex items-start gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-                                <div className={`mt-1 p-1.5 rounded-lg bg-white border border-slate-100 shadow-sm ${field.color}`}>
-                                    <field.icon className="w-3.5 h-3.5" />
-                                </div>
-                                <div className="flex-1">
-                                    <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">
-                                        {field.label}
-                                    </label>
-                                    <div className={`text-sm font-bold tracking-tight ${field.value === 'Tidak disebutkan' ? 'text-slate-300 italic font-normal' : 'text-slate-800'}`}>
-                                        {field.value}
+                            <div key={idx} className="group flex items-center justify-between p-2.5 rounded-xl bg-white border border-slate-100 hover:border-indigo-200 transition-all shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className={`p-1.5 rounded-lg bg-slate-50 ${field.color}`}>
+                                        <field.icon className="w-3.5 h-3.5" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                                            {field.label}
+                                        </label>
+                                        <div className={`text-xs font-bold tracking-tight ${field.value === 'Tidak disebutkan' ? 'text-slate-300 italic' : 'text-slate-800'}`}>
+                                            {field.value}
+                                        </div>
                                     </div>
                                 </div>
+                                <CheckCircle2 className={`w-3 h-3 ${field.value === 'Tidak disebutkan' ? 'text-slate-100' : 'text-emerald-500'}`} />
                             </div>
                         ))}
                     </div>
+                </div>
+                <div className="bg-white p-4 border-t border-slate-100">
+                    <button 
+                        onClick={handleExportToCRM}
+                        disabled={isExporting}
+                        className={`w-full py-3 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-md ${
+                            exportSuccess 
+                            ? 'bg-emerald-500 text-white' 
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95'
+                        }`}
+                    >
+                        {isExporting ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : exportSuccess ? (
+                            <>
+                                <CheckCircle2 className="w-4 h-4" /> Export Complete
+                            </>
+                        ) : (
+                            <>
+                                <ExternalLink className="w-4 h-4" /> Push to Enterprise CRM
+                            </>
+                        )}
+                    </button>
+                    <p className="text-center text-[9px] text-slate-400 font-bold uppercase mt-3 tracking-tighter">
+                        Last sync: Never • Auto-detect active
+                    </p>
                 </div>
             </div>
 

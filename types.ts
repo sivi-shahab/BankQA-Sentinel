@@ -14,6 +14,7 @@ export interface GlossaryTerm {
 export interface TranscriptSegment {
   speaker: string;
   text: string;
+  timestamp?: string;
 }
 
 export interface ExtractedInfo {
@@ -51,6 +52,12 @@ export interface AgentPerformance {
   weaknesses: string[];
 }
 
+export interface GenderProfile {
+  agentGender: 'MALE' | 'FEMALE' | 'UNKNOWN';
+  customerGender: 'MALE' | 'FEMALE' | 'UNKNOWN';
+  reasoning: string;
+}
+
 export interface CallAnalysis {
   transcriptSegments: TranscriptSegment[];
   summary: string;
@@ -62,9 +69,87 @@ export interface CallAnalysis {
   extractedInfo: ExtractedInfo;
   conversationStats: ConversationStats;
   agentPerformance: AgentPerformance;
+  genderProfile: GenderProfile;
 }
 
-// New types for Team View
+export interface PiiSettings {
+  redactEmail: boolean;
+  redactNIK: boolean;
+  redactMotherName: boolean;
+  redactCustomerName: boolean;
+  redactPhone: boolean;
+  redactDOB: boolean;
+  redactAddress: boolean;
+  enableDiarization: boolean;
+  enableGenderDetection: boolean;
+}
+
+export interface DictionaryItem {
+  id: string;
+  term: string;
+  definition: string;
+  context: string;
+}
+
+export interface AuditLog {
+  id: string;
+  timestamp: Date;
+  user: string;
+  action: string;
+  resource: string;
+  status: 'SUCCESS' | 'WARNING' | 'CRITICAL';
+  ipAddress: string;
+}
+
+// CRM TYPES
+export interface Lead {
+  id: string;
+  name: string;
+  source: string;
+  score: number;
+  status: 'Prospect' | 'Meeting' | 'Proposal' | 'Closing';
+  category: 'Hot' | 'Warm' | 'Cold';
+  kycStatus: 'Verified' | 'Pending' | 'Rejected';
+}
+
+export interface Customer360 {
+  id: string;
+  name: string;
+  tier: 'Priority' | 'Gold' | 'Silver';
+  portfolio: {
+    savings: number;
+    deposits: number;
+    loans: number;
+    investment: number;
+  };
+  churnRisk: number;
+  lastInteraction: string;
+  nba: string; // Next Best Action
+}
+
+export interface SegmentGroup {
+  name: string;
+  count: number;
+  avgValue: number;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
+  strategy: string;
+}
+
+export interface CRMStats {
+  acquisition: {
+    totalLeads: number;
+    conversionRate: number;
+    funnelData: { stage: string; count: number }[];
+  };
+  retention: {
+    avgCLV: number;
+    churnRate: number;
+    activeCampaigns: number;
+    slaMet: number;
+    segments: SegmentGroup[];
+  };
+}
+
 export interface AgentSummary {
   id: string;
   name: string;
@@ -99,4 +184,4 @@ export enum AnalysisStatus {
   ERROR = 'ERROR'
 }
 
-export type AppView = 'WORKBENCH' | 'TEAM_ANALYTICS';
+export type AppView = 'WORKBENCH' | 'TEAM_ANALYTICS' | 'CRM_DASHBOARD' | 'MANAGEMENT' | 'AUDIT_TRAIL';

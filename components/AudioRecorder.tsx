@@ -4,14 +4,13 @@ import { Mic, Square, Loader2, UploadCloud, Shield, Lock, EyeOff } from 'lucide-
 import { AnalysisStatus } from '../types';
 
 interface AudioRecorderProps {
-  onAudioReady: (base64Audio: string, redactPII: boolean) => void;
+  onAudioReady: (base64Audio: string, mimeType?: string) => void;
   status: AnalysisStatus;
 }
 
 export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, status }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
-  const [redactPII, setRedactPII] = useState(true);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
@@ -25,23 +24,24 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      const supportedTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/aac'];
+      const mimeType = supportedTypes.find(type => MediaRecorder.isTypeSupported(type)) || 'audio/webm';
+
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType });
       chunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunksRef.current.push(e.data);
-        }
+        if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunksRef.current, { type: 'audio/wav' });
+        const blob = new Blob(chunksRef.current, { type: mimeType });
         const reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onloadend = () => {
           const base64String = reader.result as string;
           const base64Data = base64String.split(',')[1];
-          onAudioReady(base64Data, redactPII);
+          onAudioReady(base64Data, mimeType);
         };
         stream.getTracks().forEach(track => track.stop());
       };
@@ -107,21 +107,11 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
       </div>
       
       <div className="space-y-3">
-        {/* PII Toggle */}
-        <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
-          <div className="flex flex-col">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Privacy Guard</span>
-              <span className="text-xs font-bold text-slate-800">Redact PII Data</span>
-          </div>
-          <button 
-            onClick={() => !disabled && setRedactPII(!redactPII)}
-            className={`w-10 h-5 rounded-full relative transition-colors ${redactPII ? 'bg-indigo-600' : 'bg-slate-300'} ${disabled ? 'opacity-50' : ''}`}
-          >
-            <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${redactPII ? 'left-6' : 'left-1'}`} />
-          </button>
+        <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 flex items-center gap-2">
+            <Shield className="w-4 h-4 text-indigo-600" />
+            <span className="text-[10px] font-black text-indigo-800 uppercase tracking-widest leading-none">Global Privacy Rules Applied</span>
         </div>
 
-        {/* Upload Trigger */}
         {!isRecording && (
           <label className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
               <UploadCloud className="w-4 h-4" />
@@ -132,7 +122,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
                       const reader = new FileReader();
                       reader.onloadend = () => {
                           const base64Data = (reader.result as string).split(',')[1];
-                          onAudioReady(base64Data, redactPII);
+                          onAudioReady(base64Data, file.type);
                       };
                       reader.readAsDataURL(file);
                   }

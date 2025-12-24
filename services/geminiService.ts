@@ -1,12 +1,7 @@
 
-// Always use import {GoogleGenAI} from "@google/genai";
 import { GoogleGenAI, Type } from "@google/genai";
-import { CallAnalysis } from "../types";
+import { CallAnalysis, PiiSettings, DictionaryItem } from "../types";
 
-// Always initialize with named parameter apiKey.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-// Schema definition following Type documentation.
 const analysisSchema = {
   type: Type.OBJECT,
   properties: {
@@ -15,29 +10,25 @@ const analysisSchema = {
       items: {
         type: Type.OBJECT,
         properties: {
-          speaker: { type: Type.STRING, description: "The identified speaker (e.g., 'Agent', 'Customer', 'System')" },
-          text: { type: Type.STRING, description: "The spoken text for this segment" }
+          speaker: { type: Type.STRING },
+          text: { type: Type.STRING },
+          timestamp: { type: Type.STRING }
         },
-        required: ["speaker", "text"]
-      },
-      description: "Verbatim transcript of the call, separated by speaker (Diarization)."
+        required: ["speaker", "text", "timestamp"]
+      }
     },
-    summary: { type: Type.STRING, description: "Executive summary of the call focusing on banking outcomes." },
-    qualityScore: { type: Type.INTEGER, description: "A score from 0 to 100 rating the agent's performance." },
-    sentiment: { type: Type.STRING, enum: ["POSITIVE", "NEUTRAL", "NEGATIVE"], description: "Overall sentiment of the customer." },
-    nextBestActions: {
-      type: Type.ARRAY,
-      items: { type: Type.STRING },
-      description: "List of recommended next steps for the agent or follow-up actions."
-    },
+    summary: { type: Type.STRING },
+    qualityScore: { type: Type.INTEGER },
+    sentiment: { type: Type.STRING, enum: ["POSITIVE", "NEUTRAL", "NEGATIVE"] },
+    nextBestActions: { type: Type.ARRAY, items: { type: Type.STRING } },
     complianceChecklist: {
       type: Type.ARRAY,
       items: {
         type: Type.OBJECT,
         properties: {
-          category: { type: Type.STRING, description: "e.g., Greeting, ID Verification, Disclosure, Closing" },
+          category: { type: Type.STRING },
           status: { type: Type.STRING, enum: ["PASS", "FAIL", "WARNING"] },
-          details: { type: Type.STRING, description: "Reason for the status." }
+          details: { type: Type.STRING }
         },
         required: ["category", "status", "details"]
       }
@@ -49,117 +40,113 @@ const analysisSchema = {
         properties: {
           term: { type: Type.STRING },
           definition: { type: Type.STRING },
-          contextInCall: { type: Type.STRING, description: "How it was used in the specific context." }
+          contextInCall: { type: Type.STRING }
         },
         required: ["term", "definition", "contextInCall"]
-      },
-      description: "Banking specific terms detected in the call with definitions."
+      }
     },
     extractedInfo: {
       type: Type.OBJECT,
       properties: {
-        productName: { type: Type.STRING, description: "Nama produk perbankan" },
-        customerName: { type: Type.STRING, description: "Nama lengkap nasabah" },
-        dateOfBirth: { type: Type.STRING, description: "Tanggal lahir nasabah" },
-        identityNumber: { type: Type.STRING, description: "Nomor identitas (NIK/KTP)" },
-        motherMaidenName: { type: Type.STRING, description: "Nama gadis ibu kandung" },
-        bankAccountNumber: { type: Type.STRING, description: "Nomor rekening bank tujuan transfer" },
-        targetBankName: { type: Type.STRING, description: "Nama bank tujuan transfer" },
-        contributionAmount: { type: Type.STRING, description: "Nilai kontribusi/premi/biaya" },
-        phoneNumber: { type: Type.STRING, description: "Nomor telepon aktif" },
-        emailAddress: { type: Type.STRING, description: "Alamat email" },
-        occupation: { type: Type.STRING, description: "Pekerjaan nasabah" },
-        residentialAddress: { type: Type.STRING, description: "Alamat lengkap tempat tinggal" }
+        productName: { type: Type.STRING },
+        customerName: { type: Type.STRING },
+        dateOfBirth: { type: Type.STRING },
+        identityNumber: { type: Type.STRING },
+        motherMaidenName: { type: Type.STRING },
+        bankAccountNumber: { type: Type.STRING },
+        targetBankName: { type: Type.STRING },
+        contributionAmount: { type: Type.STRING },
+        phoneNumber: { type: Type.STRING },
+        emailAddress: { type: Type.STRING },
+        occupation: { type: Type.STRING },
+        residentialAddress: { type: Type.STRING }
       },
-      required: [
-        "productName", "customerName", "dateOfBirth", "identityNumber", 
-        "motherMaidenName", "bankAccountNumber", "targetBankName", 
-        "contributionAmount", "phoneNumber", "emailAddress", 
-        "occupation", "residentialAddress"
-      ],
-      description: "Detailed CRM data points extracted individually from the conversation."
+      required: ["productName", "customerName", "dateOfBirth", "identityNumber", "motherMaidenName", "bankAccountNumber", "targetBankName", "contributionAmount", "phoneNumber", "emailAddress", "occupation", "residentialAddress"]
     },
     conversationStats: {
       type: Type.OBJECT,
       properties: {
-        agentTalkTimePct: { type: Type.NUMBER, description: "Percentage of total conversation time spoken by the Agent (0-100)" },
-        customerTalkTimePct: { type: Type.NUMBER, description: "Percentage of total conversation time spoken by the Customer (0-100)" },
-        wordsPerMinute: { type: Type.NUMBER, description: "Estimated speaking pace" },
-        interruptionCount: { type: Type.NUMBER, description: "Number of times speakers interrupted each other" },
-        effectivenessRating: { type: Type.STRING, enum: ['OPTIMAL', 'AGENT_DOMINATED', 'CUSTOMER_DOMINATED'], description: "Rating of the talk-time balance" },
-        feedback: { type: Type.STRING, description: "Advice on how to improve the conversation flow based on duration stats." }
+        agentTalkTimePct: { type: Type.NUMBER },
+        customerTalkTimePct: { type: Type.NUMBER },
+        wordsPerMinute: { type: Type.NUMBER },
+        interruptionCount: { type: Type.NUMBER },
+        effectivenessRating: { type: Type.STRING, enum: ['OPTIMAL', 'AGENT_DOMINATED', 'CUSTOMER_DOMINATED'] },
+        feedback: { type: Type.STRING }
       },
       required: ["agentTalkTimePct", "customerTalkTimePct", "wordsPerMinute", "interruptionCount", "effectivenessRating", "feedback"]
     },
     agentPerformance: {
       type: Type.OBJECT,
       properties: {
-        empathyScore: { type: Type.NUMBER, description: "Ability to connect with customer emotions (0-100)" },
-        clarityScore: { type: Type.NUMBER, description: "Ability to explain product details clearly (0-100)" },
-        persuasionScore: { type: Type.NUMBER, description: "Ability to handle objections and close (0-100)" },
-        productKnowledgeScore: { type: Type.NUMBER, description: "Accuracy and depth of product information provided (0-100)" },
-        closingSkillScore: { type: Type.NUMBER, description: "Effectiveness of the call ending and conversion (0-100)" },
-        verdict: { type: Type.STRING, enum: ['STAR_PERFORMER', 'SOLID_PERFORMER', 'AVERAGE', 'NEEDS_COACHING'], description: "High-level performance classification" },
-        strengths: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Specific key strengths of the agent in this call" },
-        weaknesses: { type: Type.ARRAY, items: { type: Type.STRING }, description: "Specific areas for improvement" }
+        empathyScore: { type: Type.NUMBER },
+        clarityScore: { type: Type.NUMBER },
+        persuasionScore: { type: Type.NUMBER },
+        productKnowledgeScore: { type: Type.NUMBER },
+        closingSkillScore: { type: Type.NUMBER },
+        verdict: { type: Type.STRING, enum: ['STAR_PERFORMER', 'SOLID_PERFORMER', 'AVERAGE', 'NEEDS_COACHING'] },
+        strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+        weaknesses: { type: Type.ARRAY, items: { type: Type.STRING } }
       },
       required: ["empathyScore", "clarityScore", "persuasionScore", "productKnowledgeScore", "closingSkillScore", "verdict", "strengths", "weaknesses"]
+    },
+    genderProfile: {
+      type: Type.OBJECT,
+      properties: {
+        agentGender: { type: Type.STRING, enum: ["MALE", "FEMALE", "UNKNOWN"] },
+        customerGender: { type: Type.STRING, enum: ["MALE", "FEMALE", "UNKNOWN"] },
+        reasoning: { type: Type.STRING }
+      },
+      required: ["agentGender", "customerGender", "reasoning"]
     }
   },
-  required: ["transcriptSegments", "summary", "qualityScore", "sentiment", "nextBestActions", "complianceChecklist", "glossaryUsed", "extractedInfo", "conversationStats", "agentPerformance"]
+  required: ["transcriptSegments", "summary", "qualityScore", "sentiment", "nextBestActions", "complianceChecklist", "glossaryUsed", "extractedInfo", "conversationStats", "agentPerformance", "genderProfile"]
 };
 
-// Use gemini-3-flash-preview for general text and multimodal analysis tasks.
-export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: boolean, referenceText: string = ''): Promise<CallAnalysis> => {
+export const analyzeTelemarketingAudio = async (
+  base64Audio: string, 
+  piiSettings: PiiSettings, 
+  referenceText: string = '', 
+  dictionary: DictionaryItem[] = [],
+  audioMimeType: string = 'audio/webm'
+): Promise<CallAnalysis> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  
   try {
-    let systemPrompt = `You are a Senior Quality Control Auditor for a major bank. 
-            Analyze this telemarketing call recording. 
-            1. Transcribe the audio accurately using speaker diarization.
-            2. Evaluate adherence to banking compliance.
-            3. Identify banking terminology.
-            4. Suggest next best actions.
-            5. Assign a quality score (0-100).
-            6. EXTRACT KEY DATA: Identify specific fields in the 'extractedInfo' object. If a field is not mentioned, use "Tidak disebutkan".
-            7. ANALYZE CONVERSATION FLOW: Calculate talk ratios and words per minute.
-            8. EVALUATE AGENT PERFORMANCE: Rate the agent's soft skills (Empathy, Clarity, Persuasion, Product Knowledge, Closing) based on the interaction. Provide a verdict and list specific strengths/weaknesses.
+    let systemPrompt = `You are a Senior Quality Control Auditor for a major bank. Analyze this telemarketing call recording.
+    1. Transcribe accurately. ${piiSettings.enableDiarization ? 'Use speaker diarization (Agent vs Customer).' : 'Transcribe as single flow if diarization is disabled.'}
+    2. Provide timestamps (MM:SS).
+    3. Evaluate banking compliance and quality (0-100).
+    4. Extract CRM data into the specific 'extractedInfo' object.
+    5. ${piiSettings.enableGenderDetection ? 'Detect genders for both speakers based on vocal characteristics and linguistics.' : 'Return UNKNOWN for genders as detection is disabled.'}
+    
+    *** PRIVACY & REDACTION RULES ***
+    Check the following granular redaction settings and replace sensitive values with [REDACTED] if enabled:
+    - Redact Email: ${piiSettings.redactEmail ? 'YES' : 'NO'}
+    - Redact NIK/ID: ${piiSettings.redactNIK ? 'YES' : 'NO'}
+    - Redact Mother's Maiden Name: ${piiSettings.redactMotherName ? 'YES' : 'NO'}
+    - Redact Customer Name: ${piiSettings.redactCustomerName ? 'YES' : 'NO'}
+    - Redact Phone: ${piiSettings.redactPhone ? 'YES' : 'NO'}
+    - Redact DOB: ${piiSettings.redactDOB ? 'YES' : 'NO'}
+    - Redact Address: ${piiSettings.redactAddress ? 'YES' : 'NO'}
     `;
 
     if (referenceText) {
-        systemPrompt += `
-        
-        *** REFERENCE DOCUMENT / KNOWLEDGE BASE PROVIDED ***
-        Use the content below to evaluate the agent's performance strictly against these guidelines.
-        
-        [REFERENCE START]
-        ${referenceText}
-        [REFERENCE END]
-        `;
+      systemPrompt += `\n\n*** REFERENCE DOCUMENT ***\nUse this context for compliance verification:\n${referenceText}`;
     }
 
-    if (redactPII) {
-      systemPrompt += `
-      
-      *** SECURITY GUARDRAIL ACTIVE: STRICT PII REDACTION REQUIRED ***
-      You MUST identify and redact all Personally Identifiable Information (PII).
-      Replace real values with placeholders like [NAME REDACTED], [PHONE REDACTED], [ACCOUNT REDACTED], [DOB REDACTED], etc.
-      Even in the 'extractedInfo' JSON object, use these redacted placeholders if redaction is ON.
-      `;
+    if (dictionary.length > 0) {
+      systemPrompt += `\n\n*** CUSTOM DICTIONARY / GLOSSARY ***\nUse these terms to identify specific banking terminology:\n`;
+      dictionary.forEach(item => {
+        systemPrompt += `- ${item.term}: ${item.definition} (Context: ${item.context})\n`;
+      });
     }
 
-    // Recommended model for basic analysis tasks.
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: {
         parts: [
-          {
-            inlineData: {
-              mimeType: 'audio/wav',
-              data: base64Audio
-            }
-          },
-          {
-            text: systemPrompt
-          }
+          { inlineData: { mimeType: audioMimeType, data: base64Audio } },
+          { text: systemPrompt }
         ]
       },
       config: {
@@ -169,62 +156,36 @@ export const analyzeTelemarketingAudio = async (base64Audio: string, redactPII: 
       }
     });
 
-    if (!response.text) {
-      throw new Error("No response generated");
-    }
-
+    if (!response.text) throw new Error("No response generated");
     return JSON.parse(response.text.trim()) as CallAnalysis;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Gemini Analysis Error:", error);
     throw error;
   }
 };
 
-// Use gemini-3-pro-preview for complex reasoning tasks like RAG chat.
 export const sendChatQuery = async (
   history: { role: 'user' | 'model'; text: string }[],
   currentMessage: string,
   contextData?: CallAnalysis,
   referenceText: string = ''
 ): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   try {
     let systemInstruction = `You are an AI Assistant for a Banking Quality Control Dashboard.
-    You have access to the analysis of a specific telemarketing call.
-    
-    Context Data (Analysis Result):
-    ${contextData ? JSON.stringify(contextData) : 'No specific call context loaded yet.'}
-    
-    Answer the user's questions about the call, banking regulations, or sales techniques based on this context.
-    Keep answers concise and professional.
-    `;
-
-    if (referenceText) {
-        systemInstruction += `
-        
-        *** REFERENCE KNOWLEDGE BASE ***
-        The user has uploaded a reference document. Use it for context.
-        
-        [REFERENCE DOCUMENT]
-        ${referenceText}
-        `;
-    }
+    Context Data: ${contextData ? JSON.stringify(contextData) : 'None'}.
+    Reference: ${referenceText}`;
 
     const chat = ai.chats.create({
       model: 'gemini-3-pro-preview',
-      config: {
-        systemInstruction: systemInstruction,
-      },
-      history: history.map(h => ({
-        role: h.role,
-        parts: [{ text: h.text }]
-      }))
+      config: { systemInstruction },
+      history: history.map(h => ({ role: h.role, parts: [{ text: h.text }] }))
     });
 
     const result = await chat.sendMessage({ message: currentMessage });
-    // Use .text property directly.
-    return result.text || "I apologize, I couldn't generate a response.";
+    return result.text || "No response.";
   } catch (error) {
-    console.error("Gemini Chat Error:", error);
+    console.error("Chat Error:", error);
     throw error;
   }
 };
