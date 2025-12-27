@@ -71,9 +71,10 @@ const MOCK_CUSTOMERS = [
     id: 'C003', name: 'Bapak Kevin', tier: 'Silver', 
     portfolio: { savings: 12000000, deposits: 10000000, loans: 0, investment: 0, insurance: 0 },
     churnRisk: 35, riskTrend: 'STABLE', riskFactors: ['Minimal Activity', 'Competitor Interest Detected'],
-    lastInteraction: '1 week ago', nba: 'Credit Card Cross-sell',
-    persona: 'Young Saver', engagementScore: 45, walletSharePct: 40, moodTrend: ['NEU', 'POS'],
-    lifeEventPrediction: 'Education Loan (75%)', wealthVelocity: 'STABLE'
+    lastInteraction: '1 week ago', nba: 'Credit Card Limit Boost',
+    persona: 'Early Stage Saver', engagementScore: 45, walletSharePct: 40,
+    moodTrend: ['NEU', 'POS', 'NEU', 'NEU'], lifeEventPrediction: 'Education Loan Need (75%)',
+    wealthVelocity: 'STABLE'
   },
 ];
 
@@ -135,7 +136,51 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<AnalysisStatus>(AnalysisStatus.IDLE);
   const [analysisResult, setAnalysisResult] = useState<CallAnalysis | null>(null);
   const [knowledgeDocs, setKnowledgeDocs] = useState<KnowledgeDocument[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  // Initialize with a multiple campaigns to demonstrate comparison
+  const [campaigns, setCampaigns] = useState<Campaign[]>([
+    {
+      id: 'c1',
+      name: 'Q3 Low Interest Home Loan',
+      status: 'ACTIVE',
+      uploadDate: new Date(),
+      fileName: 'kpr-promo-q3.pdf',
+      productType: 'Consumer Loan',
+      stats: {
+        conversionRate: 12.5,
+        acceptanceRate: 45.2,
+        roi: 185,
+        leadsTargeted: 1500
+      }
+    },
+    {
+      id: 'c2',
+      name: 'Student Credit Card Blitz',
+      status: 'ARCHIVED',
+      uploadDate: new Date(Date.now() - 86400000 * 30), // 30 days ago
+      fileName: 'student-cc-promo.pdf',
+      productType: 'Credit Card',
+      stats: {
+        conversionRate: 8.5,
+        acceptanceRate: 32.0,
+        roi: 120,
+        leadsTargeted: 2000
+      }
+    },
+    {
+      id: 'c3',
+      name: 'Priority Wealth 2023',
+      status: 'ARCHIVED',
+      uploadDate: new Date(Date.now() - 86400000 * 60), // 60 days ago
+      fileName: 'wealth-priority.docx',
+      productType: 'Wealth Management',
+      stats: {
+        conversionRate: 18.2,
+        acceptanceRate: 60.5,
+        roi: 310,
+        leadsTargeted: 500
+      }
+    }
+  ]);
   
   const [piiSettings, setPiiSettings] = useState<PiiSettings>({
     redactEmail: true,
@@ -356,7 +401,7 @@ const App: React.FC = () => {
               </div>
             </div>
           ) : currentView === 'CRM_DASHBOARD' ? (
-             <CRMDashboard />
+             <CRMDashboard campaigns={campaigns} />
           ) : currentView === 'AUDIT_TRAIL' ? (
              <div className="max-w-7xl mx-auto h-[calc(100vh-12rem)] pb-10">
                <AuditTrail logs={auditLogs} />

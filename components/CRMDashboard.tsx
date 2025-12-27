@@ -1,5 +1,4 @@
 
-
 import React, { useState } from 'react';
 import { 
   Target, Users, Zap, ShieldCheck, 
@@ -36,7 +35,9 @@ import {
   ArrowUpNarrowWide,
   Minus,
   X, Phone, Mail, FileText, Check, ChevronRight,
-  Wallet, PieChart as PieChartIcon, ArrowRight, Loader2
+  Wallet, PieChart as PieChartIcon, ArrowRight, Loader2,
+  Rocket,
+  Megaphone
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -45,7 +46,7 @@ import {
   Legend, AreaChart, Area,
   LineChart, Line
 } from 'recharts';
-import { Lead, Customer360, CRMStats, SegmentGroup } from '../types';
+import { Lead, Customer360, CRMStats, SegmentGroup, Campaign } from '../types';
 
 const MOCK_LEADS: Lead[] = [
   { 
@@ -72,7 +73,7 @@ const MOCK_CUSTOMERS: Customer360[] = [
   { 
     id: 'C001', name: 'Bapak Ahmad', tier: 'Priority', 
     portfolio: { savings: 150000000, deposits: 500000000, loans: 0, investment: 120000000, insurance: 50000000 },
-    churnRisk: 12, riskTrend: 'DOWN', riskFactors: ['Stable AUM Growth', 'High Digital Engagement'],
+    churnRisk: 12, riskTrend: 'DOWN', riskFactors: ['Stable Balance', 'Active Investment'],
     lastInteraction: '2 days ago', nba: 'Offer Reksadana Saham',
     persona: 'Pragmatic Wealth Builder', engagementScore: 94, walletSharePct: 65,
     moodTrend: ['POS', 'POS', 'NEU', 'POS'], lifeEventPrediction: 'Retirement Planning (85%)',
@@ -443,12 +444,18 @@ const CustomerDetailPanel: React.FC<CustomerDetailProps> = ({ customer, onClose 
     );
 };
 
-export const CRMDashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'ACQUISITION' | 'RETENTION'>('ACQUISITION');
+interface CRMDashboardProps {
+    campaigns?: Campaign[];
+}
+
+export const CRMDashboard: React.FC<CRMDashboardProps> = ({ campaigns = [] }) => {
+  const [activeTab, setActiveTab] = useState<'ACQUISITION' | 'RETENTION' | 'CAMPAIGNS'>('ACQUISITION');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer360 | null>(null);
   const [isGeneratingForecast, setIsGeneratingForecast] = useState(false);
   const [showForecastResult, setShowForecastResult] = useState(false);
+  
+  const activeCampaign = campaigns.find(c => c.status === 'ACTIVE');
 
   const formatIDR = (val: any) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(val));
 
@@ -460,6 +467,8 @@ export const CRMDashboard: React.FC = () => {
           setTimeout(() => setShowForecastResult(false), 4000);
       }, 2000);
   };
+
+  const sortedCampaigns = [...campaigns].sort((a, b) => b.uploadDate.getTime() - a.uploadDate.getTime());
 
   return (
     <div className="space-y-8 animate-fade-in pb-20 relative">
@@ -498,18 +507,24 @@ export const CRMDashboard: React.FC = () => {
           </div>
         </div>
         
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200 overflow-x-auto max-w-full">
           <button 
             onClick={() => setActiveTab('ACQUISITION')}
-            className={`px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'ACQUISITION' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'ACQUISITION' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
           >
             Acquisition (Hunt)
           </button>
           <button 
             onClick={() => setActiveTab('RETENTION')}
-            className={`px-8 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'RETENTION' ? 'bg-white text-emerald-600 shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+            className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'RETENTION' ? 'bg-white text-emerald-600 shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
           >
             Retention (Farm)
+          </button>
+           <button 
+            onClick={() => setActiveTab('CAMPAIGNS')}
+            className={`px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === 'CAMPAIGNS' ? 'bg-white text-pink-600 shadow-md' : 'text-slate-500 hover:text-slate-800'}`}
+          >
+            Campaign Performance
           </button>
         </div>
       </div>
@@ -519,17 +534,53 @@ export const CRMDashboard: React.FC = () => {
             {/* TOP INTELLIGENCE ROW */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 <div className="lg:col-span-1 space-y-4">
-                    <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm relative group overflow-hidden">
-                        <div className="absolute -bottom-4 -right-4 opacity-5 group-hover:scale-110 transition-transform">
-                            <Target className="w-32 h-32 text-indigo-600" />
+                    {/* Live Campaign Tracker Widget */}
+                    {activeCampaign ? (
+                        <div className="bg-white rounded-3xl p-6 border border-indigo-100 shadow-sm relative group overflow-hidden">
+                             <div className="absolute top-0 right-0 p-3">
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 rounded-full border border-emerald-100">
+                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                                    <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Live Campaign</span>
+                                </div>
+                             </div>
+                             
+                             <div className="flex items-center gap-3 mb-4 mt-2">
+                                <div className="p-2.5 bg-indigo-600 text-white rounded-xl shadow-md shadow-indigo-200">
+                                    <Rocket className="w-4 h-4" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-xs font-black text-slate-800 truncate">{activeCampaign.name}</h4>
+                                    <p className="text-[9px] text-slate-400 font-bold uppercase">{activeCampaign.productType}</p>
+                                </div>
+                             </div>
+
+                             {activeCampaign.stats && (
+                                 <div className="space-y-3">
+                                     <div className="flex justify-between items-end">
+                                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">ROI Yield</span>
+                                        <span className="text-xl font-black text-emerald-600">{activeCampaign.stats.roi}%</span>
+                                     </div>
+                                     <div className="grid grid-cols-2 gap-2">
+                                         <div className="p-2 bg-slate-50 rounded-xl text-center border border-slate-100">
+                                             <div className="text-[8px] font-black text-slate-400 uppercase mb-1">Conv. Rate</div>
+                                             <div className="text-sm font-black text-indigo-600">{activeCampaign.stats.conversionRate}%</div>
+                                         </div>
+                                         <div className="p-2 bg-slate-50 rounded-xl text-center border border-slate-100">
+                                            <div className="text-[8px] font-black text-slate-400 uppercase mb-1">Acceptance</div>
+                                            <div className="text-sm font-black text-emerald-600">{activeCampaign.stats.acceptanceRate}%</div>
+                                         </div>
+                                     </div>
+                                 </div>
+                             )}
                         </div>
-                        <div className="flex justify-between items-start mb-2 relative z-10">
-                            <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl"><Target className="w-5 h-5" /></div>
-                            <span className="text-[10px] font-black text-emerald-500 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">+12% WoW</span>
+                    ) : (
+                        <div className="bg-white rounded-3xl p-6 border border-dashed border-slate-200 shadow-sm flex flex-col items-center justify-center text-center py-10">
+                            <Rocket className="w-8 h-8 text-slate-300 mb-2" />
+                            <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No Active Campaign</p>
+                            <p className="text-[9px] text-slate-300">Set active in Management</p>
                         </div>
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Pipeline</h4>
-                        <div className="text-2xl font-black text-slate-800 tracking-tight">{CRM_STATS.acquisition.totalLeads} Hot Leads</div>
-                    </div>
+                    )}
+
                     <div className="bg-slate-900 rounded-3xl p-6 shadow-xl border border-slate-800 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-125 transition-transform duration-700">
                             <Coins className="w-20 h-20 text-white" />
@@ -658,7 +709,7 @@ export const CRMDashboard: React.FC = () => {
                 </div>
             </div>
         </div>
-      ) : (
+      ) : activeTab === 'RETENTION' ? (
         <div className="space-y-12 animate-fade-in">
           {/* RETENTION INTELLIGENCE ROW */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -947,6 +998,145 @@ export const CRMDashboard: React.FC = () => {
                 </button>
             </div>
           </div>
+        </div>
+      ) : (
+        <div className="space-y-8 animate-fade-in">
+           {/* CAMPAIGN PERFORMANCE DASHBOARD */}
+           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+               
+               {/* MAIN CHART */}
+               <div className="lg:col-span-2 bg-white rounded-[44px] p-10 border border-slate-200 shadow-sm">
+                   <div className="flex items-center justify-between mb-10">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-pink-50 text-pink-600 rounded-2xl"><Megaphone className="w-6 h-6" /></div>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-800 tracking-tight">Multi-Channel Campaign Performance</h3>
+                                <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">ROI & Conversion Rate Comparison</p>
+                            </div>
+                        </div>
+                   </div>
+                   <div className="h-[350px]">
+                       <ResponsiveContainer width="100%" height="100%">
+                           <BarChart data={sortedCampaigns} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                               <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 'black', fill: '#64748b' }} interval={0} angle={-15} textAnchor="end" height={60} />
+                               <YAxis yAxisId="left" orientation="left" axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                               <YAxis yAxisId="right" orientation="right" axisLine={false} tickLine={false} tickFormatter={(v) => `${v}%`} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                               <Tooltip 
+                                  cursor={{ fill: '#f8fafc' }} 
+                                  contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.2)' }} 
+                                  formatter={(value, name) => [
+                                      name === 'ROI' ? <span className="text-emerald-600 font-black">{value}%</span> : <span className="text-indigo-600 font-black">{value}%</span>,
+                                      name === 'stats.roi' ? 'ROI Yield' : 'Conversion Rate'
+                                  ]}
+                                  labelStyle={{ color: '#64748b', fontWeight: 'bold', fontSize: '12px', marginBottom: '8px', textTransform: 'uppercase' }}
+                               />
+                               <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
+                               <Bar yAxisId="left" dataKey="stats.roi" name="ROI Yield" fill="#10b981" radius={[8, 8, 0, 0]} barSize={40} />
+                               <Bar yAxisId="right" dataKey="stats.conversionRate" name="Conversion Rate" fill="#6366f1" radius={[8, 8, 0, 0]} barSize={40} />
+                           </BarChart>
+                       </ResponsiveContainer>
+                   </div>
+               </div>
+
+               {/* SIDE STATS */}
+               <div className="space-y-6">
+                  {/* Aggregate Summary */}
+                   <div className="bg-slate-900 rounded-[40px] p-8 text-white relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform">
+                             <Rocket className="w-32 h-32 text-white" />
+                        </div>
+                        <h4 className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-6">Total Impact</h4>
+                        <div className="space-y-6 relative z-10">
+                            <div>
+                                <div className="text-4xl font-black tracking-tighter mb-1">
+                                    {sortedCampaigns.reduce((acc, c) => acc + (c.stats?.leadsTargeted || 0), 0).toLocaleString()}
+                                </div>
+                                <div className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Total Leads Targeted</div>
+                            </div>
+                            <div className="h-px w-full bg-slate-700"></div>
+                            <div>
+                                <div className="text-4xl font-black tracking-tighter mb-1 text-emerald-400">
+                                    {Math.round(sortedCampaigns.reduce((acc, c) => acc + (c.stats?.roi || 0), 0) / sortedCampaigns.length)}%
+                                </div>
+                                <div className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Avg. Campaign ROI</div>
+                            </div>
+                        </div>
+                   </div>
+
+                   {/* Active Campaign Spotlight */}
+                   {activeCampaign && (
+                       <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm group hover:border-indigo-200 transition-all">
+                           <div className="flex items-center justify-between mb-4">
+                               <div className="flex items-center gap-2">
+                                   <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Now</span>
+                               </div>
+                               <Rocket className="w-4 h-4 text-emerald-500" />
+                           </div>
+                           <h4 className="font-black text-slate-800 text-sm mb-1">{activeCampaign.name}</h4>
+                           <div className="text-[10px] text-slate-400 font-bold uppercase mb-6">{activeCampaign.productType}</div>
+                           
+                           <div className="space-y-3">
+                               <div className="flex justify-between items-center text-xs font-bold text-slate-600">
+                                   <span>Conversion</span>
+                                   <span className="text-indigo-600">{activeCampaign.stats?.conversionRate}%</span>
+                               </div>
+                               <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                   <div className="h-full bg-indigo-500" style={{ width: `${(activeCampaign.stats?.conversionRate || 0) * 3}%` }}></div>
+                               </div>
+                               
+                               <div className="flex justify-between items-center text-xs font-bold text-slate-600 pt-2">
+                                   <span>Acceptance</span>
+                                   <span className="text-emerald-600">{activeCampaign.stats?.acceptanceRate}%</span>
+                               </div>
+                               <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                   <div className="h-full bg-emerald-500" style={{ width: `${activeCampaign.stats?.acceptanceRate}%` }}></div>
+                               </div>
+                           </div>
+                       </div>
+                   )}
+               </div>
+           </div>
+
+           {/* DETAILED METRICS GRID */}
+           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+               {sortedCampaigns.map((camp) => (
+                   <div key={camp.id} className="bg-white rounded-[32px] p-6 border border-slate-200 shadow-sm hover:shadow-xl hover:border-indigo-100 transition-all group flex flex-col">
+                       <div className="flex items-start justify-between mb-6">
+                           <div className="flex items-center gap-3">
+                               <div className={`p-3 rounded-2xl ${camp.status === 'ACTIVE' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-slate-100 text-slate-400'}`}>
+                                   {camp.productType.includes('Loan') ? <Landmark className="w-5 h-5" /> : 
+                                    camp.productType.includes('Card') ? <CreditCard className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />}
+                               </div>
+                               <div>
+                                   <div className="text-xs font-black text-slate-800 mb-0.5 max-w-[150px] truncate" title={camp.name}>{camp.name}</div>
+                                   <div className="text-[9px] font-bold text-slate-400 uppercase">{camp.status}</div>
+                               </div>
+                           </div>
+                           <div className="text-[10px] font-black text-slate-300 bg-slate-50 px-2 py-1 rounded-lg">
+                               {camp.uploadDate.toLocaleDateString()}
+                           </div>
+                       </div>
+
+                       <div className="grid grid-cols-2 gap-3 mb-6">
+                           <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-100 text-center">
+                               <div className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-1">ROI</div>
+                               <div className="text-lg font-black text-emerald-600">{camp.stats?.roi}%</div>
+                           </div>
+                           <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 text-center">
+                               <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Leads</div>
+                               <div className="text-lg font-black text-slate-700">{camp.stats?.leadsTargeted.toLocaleString()}</div>
+                           </div>
+                       </div>
+                       
+                       <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                           <span>File: {camp.fileName.substring(0, 15)}...</span>
+                           <button className="text-indigo-600 hover:underline">View Report</button>
+                       </div>
+                   </div>
+               ))}
+           </div>
         </div>
       )}
     </div>

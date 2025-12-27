@@ -4,7 +4,8 @@ import {
   Megaphone, UploadCloud, FileText, X, 
   CheckCircle2, Clock, CalendarRange, 
   Loader2, Sparkles, FileSpreadsheet,
-  AlertCircle, Trash2, Rocket
+  AlertCircle, Trash2, Rocket, TrendingUp,
+  Target, PieChart, ArrowUpRight
 } from 'lucide-react';
 import { Campaign } from '../types';
 
@@ -40,7 +41,13 @@ export const CampaignManager: React.FC<CampaignManagerProps> = ({ campaigns, onC
         uploadDate: new Date(),
         status: campaigns.length === 0 ? 'ACTIVE' : 'SCHEDULED', // First one active, others scheduled
         productType: file.name.toLowerCase().includes('loan') ? 'Consumer Loan' : 
-                     file.name.toLowerCase().includes('card') ? 'Credit Card' : 'Wealth Management'
+                     file.name.toLowerCase().includes('card') ? 'Credit Card' : 'Wealth Management',
+        stats: {
+             conversionRate: Number((Math.random() * 15 + 2).toFixed(1)),
+             acceptanceRate: Number((Math.random() * 10 + 1).toFixed(1)),
+             roi: Math.floor(Math.random() * 200) + 120,
+             leadsTargeted: Math.floor(Math.random() * 5000) + 1000
+        }
       };
 
       onCampaignsChange([newCampaign, ...campaigns]);
@@ -72,7 +79,6 @@ export const CampaignManager: React.FC<CampaignManagerProps> = ({ campaigns, onC
       if (c.id === id) {
         return { ...c, status: c.status === 'ACTIVE' ? 'ARCHIVED' : 'ACTIVE' };
       }
-      // If we activate one, we might want to archive others of same type, but for now just toggle
       return c;
     }));
   };
@@ -89,7 +95,7 @@ export const CampaignManager: React.FC<CampaignManagerProps> = ({ campaigns, onC
           </div>
           <div>
             <h3 className="text-xl font-black text-slate-800 tracking-tight">Campaign Product Manager</h3>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Weekly Promo Configuration</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Weekly Promo Configuration & Analytics</p>
           </div>
         </div>
         <div className="flex items-center gap-2 px-3 py-1 bg-slate-50 border border-slate-200 rounded-lg">
@@ -159,14 +165,14 @@ export const CampaignManager: React.FC<CampaignManagerProps> = ({ campaigns, onC
            {/* Active Campaign Card */}
            <div className="mb-6">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                 <Rocket className="w-3.5 h-3.5 text-emerald-500" /> Currently Live
+                 <Rocket className="w-3.5 h-3.5 text-emerald-500" /> Currently Live Performance
               </h4>
               {activeCampaign ? (
                 <div className="bg-white p-5 rounded-2xl border border-emerald-100 shadow-sm relative overflow-hidden group">
                    <div className="absolute top-0 right-0 p-3">
                       <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
                    </div>
-                   <div className="flex items-center gap-4 mb-3">
+                   <div className="flex items-center gap-4 mb-5">
                       <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
                          <Sparkles className="w-6 h-6" />
                       </div>
@@ -175,10 +181,40 @@ export const CampaignManager: React.FC<CampaignManagerProps> = ({ campaigns, onC
                          <span className="text-[10px] font-bold text-slate-400 uppercase">{activeCampaign.productType}</span>
                       </div>
                    </div>
-                   <div className="flex items-center gap-2 text-[10px] font-mono text-slate-400 bg-slate-50 p-2 rounded-lg">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-                      Active since {activeCampaign.uploadDate.toLocaleDateString()}
+
+                   {/* Stats Grid */}
+                   {activeCampaign.stats && (
+                       <div className="grid grid-cols-3 gap-2 mb-4">
+                           <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                               <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mb-1">Conv. Rate</div>
+                               <div className="text-sm font-black text-emerald-600 flex items-center justify-center gap-1">
+                                   {activeCampaign.stats.conversionRate}% 
+                                   <TrendingUp className="w-3 h-3" />
+                               </div>
+                           </div>
+                           <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                               <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mb-1">Offer Accept</div>
+                               <div className="text-sm font-black text-indigo-600 flex items-center justify-center gap-1">
+                                   {activeCampaign.stats.acceptanceRate}%
+                               </div>
+                           </div>
+                           <div className="p-2 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                               <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mb-1">Est. ROI</div>
+                               <div className="text-sm font-black text-emerald-600 flex items-center justify-center gap-1">
+                                   {activeCampaign.stats.roi}%
+                               </div>
+                           </div>
+                       </div>
+                   )}
+
+                   <div className="flex items-center justify-between gap-2 text-[10px] font-mono text-slate-400 bg-slate-50 p-2 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+                        Since {activeCampaign.uploadDate.toLocaleDateString()}
+                      </div>
+                      {activeCampaign.stats && <span>Target: {activeCampaign.stats.leadsTargeted} Leads</span>}
                    </div>
+                   
                    <button 
                       onClick={() => toggleStatus(activeCampaign.id)}
                       className="mt-3 w-full py-2 text-[10px] font-black text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg uppercase tracking-widest transition-colors"
@@ -196,38 +232,54 @@ export const CampaignManager: React.FC<CampaignManagerProps> = ({ campaigns, onC
            {/* Scheduled List */}
            <div className="flex-1 overflow-y-auto custom-scrollbar">
               <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                 <CalendarRange className="w-3.5 h-3.5 text-indigo-500" /> Queue & History
+                 <CalendarRange className="w-3.5 h-3.5 text-indigo-500" /> Queue & Historical Data
               </h4>
               <div className="space-y-3">
                  {scheduledCampaigns.length === 0 ? (
                     <p className="text-[10px] text-slate-300 italic text-center py-4">Queue is empty</p>
                  ) : (
                     scheduledCampaigns.map(campaign => (
-                       <div key={campaign.id} className="bg-white p-3 rounded-xl border border-slate-200 flex items-center justify-between group hover:border-indigo-200 transition-all">
-                          <div className="flex items-center gap-3">
-                             <div className="p-2 bg-slate-100 text-slate-500 rounded-lg">
-                                <FileText className="w-4 h-4" />
-                             </div>
-                             <div>
-                                <div className="font-bold text-slate-700 text-xs truncate max-w-[120px]">{campaign.name}</div>
-                                <div className="text-[9px] font-bold text-slate-400 uppercase">{campaign.status}</div>
-                             </div>
+                       <div key={campaign.id} className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col gap-2 group hover:border-indigo-200 transition-all">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-slate-100 text-slate-500 rounded-lg">
+                                    <FileText className="w-4 h-4" />
+                                </div>
+                                <div>
+                                    <div className="font-bold text-slate-700 text-xs truncate max-w-[120px]">{campaign.name}</div>
+                                    <div className="text-[9px] font-bold text-slate-400 uppercase">{campaign.status}</div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <button 
+                                    onClick={() => toggleStatus(campaign.id)}
+                                    className="p-1.5 text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"
+                                    title="Set Active"
+                                >
+                                    <Rocket className="w-3.5 h-3.5" />
+                                </button>
+                                <button 
+                                    onClick={() => removeCampaign(campaign.id)}
+                                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-1">
-                             <button 
-                                onClick={() => toggleStatus(campaign.id)}
-                                className="p-1.5 text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors"
-                                title="Set Active"
-                             >
-                                <Rocket className="w-3.5 h-3.5" />
-                             </button>
-                             <button 
-                                onClick={() => removeCampaign(campaign.id)}
-                                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                             >
-                                <Trash2 className="w-3.5 h-3.5" />
-                             </button>
-                          </div>
+                          
+                          {/* Historical Stats Mini Bar */}
+                          {campaign.stats && campaign.status === 'ARCHIVED' && (
+                              <div className="flex items-center gap-3 pt-2 border-t border-slate-50 mt-1">
+                                  <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500">
+                                      <Target className="w-3 h-3 text-slate-400" />
+                                      CR: <span className="text-emerald-600">{campaign.stats.conversionRate}%</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 text-[9px] font-bold text-slate-500">
+                                      <PieChart className="w-3 h-3 text-slate-400" />
+                                      ROI: <span className="text-indigo-600">{campaign.stats.roi}%</span>
+                                  </div>
+                              </div>
+                          )}
                        </div>
                     ))
                  )}

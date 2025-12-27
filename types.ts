@@ -119,6 +119,13 @@ export interface KnowledgeDocument {
   uploadDate: Date;
 }
 
+export interface CampaignStats {
+    conversionRate: number;
+    acceptanceRate: number;
+    roi: number;
+    leadsTargeted: number;
+}
+
 export interface Campaign {
   id: string;
   name: string;
@@ -126,6 +133,7 @@ export interface Campaign {
   uploadDate: Date;
   fileName: string;
   productType: string;
+  stats?: CampaignStats;
 }
 
 // CRM TYPES - ENHANCED FOR HYPER-INTELLIGENCE
