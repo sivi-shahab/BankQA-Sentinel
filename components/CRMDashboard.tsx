@@ -42,7 +42,9 @@ import {
   Download,
   Share2,
   Table,
-  UserMinus
+  UserMinus,
+  PhoneCall,
+  Send
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -286,6 +288,12 @@ interface CustomerDetailProps {
 }
 
 const CustomerDetailPanel: React.FC<CustomerDetailProps> = ({ customer, onClose }) => {
+    const [actionStatus, setActionStatus] = useState<{
+        call: 'IDLE' | 'PROCESSING' | 'COMPLETED';
+        email: 'IDLE' | 'PROCESSING' | 'COMPLETED';
+        campaign: 'IDLE' | 'PROCESSING' | 'COMPLETED';
+    }>({ call: 'IDLE', email: 'IDLE', campaign: 'IDLE' });
+
     const formatIDR = (val: any) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(val));
     
     const portfolioData = [
@@ -297,6 +305,19 @@ const CustomerDetailPanel: React.FC<CustomerDetailProps> = ({ customer, onClose 
     ].filter(i => i.value > 0);
 
     const totalAUM = Object.values(customer.portfolio).reduce((a: number, b: number) => a + b, 0);
+
+    const handleAction = (type: 'call' | 'email' | 'campaign') => {
+        if (actionStatus[type] !== 'IDLE') return;
+
+        setActionStatus(prev => ({ ...prev, [type]: 'PROCESSING' }));
+        
+        setTimeout(() => {
+            setActionStatus(prev => ({ ...prev, [type]: 'COMPLETED' }));
+            setTimeout(() => {
+                 setActionStatus(prev => ({ ...prev, [type]: 'IDLE' }));
+            }, 3000);
+        }, 2000);
+    };
 
     return (
         <div className="fixed inset-0 z-[60] flex justify-end">
@@ -432,14 +453,46 @@ const CustomerDetailPanel: React.FC<CustomerDetailProps> = ({ customer, onClose 
 
                     {/* Actions */}
                     <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
-                         <button className="py-3.5 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
-                             <Phone className="w-4 h-4" /> Call Client
+                         <button 
+                            onClick={() => handleAction('call')}
+                            disabled={actionStatus.call !== 'IDLE'}
+                            className={`py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${
+                                actionStatus.call === 'COMPLETED' ? 'bg-emerald-500 text-white shadow-emerald-200' : 
+                                actionStatus.call === 'PROCESSING' ? 'bg-indigo-400 text-white cursor-wait' :
+                                'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-100'
+                            }`}
+                         >
+                             {actionStatus.call === 'PROCESSING' ? <Loader2 className="w-4 h-4 animate-spin" /> : 
+                              actionStatus.call === 'COMPLETED' ? <><CheckCircle2 className="w-4 h-4" /> Initiated</> : 
+                              <><PhoneCall className="w-4 h-4" /> Call Client</>}
                          </button>
-                         <button className="py-3.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
-                             <Mail className="w-4 h-4" /> Email Offer
+
+                         <button 
+                            onClick={() => handleAction('email')}
+                            disabled={actionStatus.email !== 'IDLE'}
+                            className={`py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 border ${
+                                actionStatus.email === 'COMPLETED' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' :
+                                actionStatus.email === 'PROCESSING' ? 'bg-slate-50 border-slate-200 text-slate-400 cursor-wait' :
+                                'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                            }`}
+                         >
+                             {actionStatus.email === 'PROCESSING' ? <Loader2 className="w-4 h-4 animate-spin" /> : 
+                              actionStatus.email === 'COMPLETED' ? <><CheckCircle2 className="w-4 h-4" /> Sent</> : 
+                              <><Send className="w-4 h-4" /> Email Offer</>}
                          </button>
-                         <button className="col-span-2 py-3.5 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-100 flex items-center justify-center gap-2">
-                             <Zap className="w-4 h-4" /> Execute Retention Campaign
+
+                         <button 
+                            onClick={() => handleAction('campaign')}
+                            disabled={actionStatus.campaign !== 'IDLE'}
+                            className={`col-span-2 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2 ${
+                                actionStatus.campaign === 'COMPLETED' ? 'bg-slate-800 text-emerald-400 shadow-slate-200' :
+                                actionStatus.campaign === 'PROCESSING' ? 'bg-emerald-400 text-white cursor-wait' :
+                                'bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-100'
+                            }`}
+                         >
+                             {actionStatus.campaign === 'PROCESSING' ? <Loader2 className="w-4 h-4 animate-spin" /> : 
+                              actionStatus.campaign === 'COMPLETED' ? <><Zap className="w-4 h-4 fill-current" /> Campaign Active</> : 
+                              <><Zap className="w-4 h-4" /> Execute Retention Campaign</>}
                          </button>
                     </div>
 
