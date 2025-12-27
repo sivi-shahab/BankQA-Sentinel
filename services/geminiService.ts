@@ -14,15 +14,19 @@ async function retryOperation<T>(operation: () => Promise<T>, maxRetries = 3, in
     } catch (error: any) {
       const isRateLimit = error?.status === 429 || error?.code === 429 || error?.message?.includes('429') || error?.message?.includes('Quota exceeded');
       
-      // If it's a rate limit error and we have retries left
-      if (isRateLimit && i < maxRetries - 1) {
-        console.warn(`Gemini API Rate Limit hit. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
-        await new Promise(resolve => setTimeout(resolve, delay));
-        delay *= 2; // Exponential backoff (2s, 4s, 8s...)
-        continue;
+      // If it's a rate limit error
+      if (isRateLimit) {
+        if (i < maxRetries - 1) {
+          console.warn(`Gemini API Rate Limit hit. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          delay *= 2; // Exponential backoff
+          continue;
+        } else {
+           // If we are out of retries and it's a rate limit, rethrow specific error to be handled by caller
+           throw new Error("RATE_LIMIT_EXCEEDED");
+        }
       }
       
-      // If it's not a rate limit error, or we're out of retries, throw
       throw error;
     }
   }
@@ -233,7 +237,7 @@ export const sendChatQuery = async (
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const performChat = async () => {
-    const systemInstruction = `You are the OmniAssure FinAI Intelligence Assistant.
+    const systemInstruction = `You are the ProofPoint.AI FinAI Intelligence Assistant.
     You have absolute access to all data on the dashboard for deep context analysis.
     `;
 
@@ -248,6 +252,34 @@ export const sendChatQuery = async (
   };
 
   return retryOperation(performChat);
+};
+
+// Helper to generate deterministic colors based on name string
+const stringToColor = (str: string) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const c = (hash & 0x00ffffff).toString(16).toUpperCase();
+  return '#' + '00000'.substring(0, 6 - c.length) + c;
+};
+
+// Fallback SVG Generator that runs locally
+const generateFallbackAvatar = (name: string, skill: string) => {
+  const color = stringToColor(name);
+  const initial = name.charAt(0).toUpperCase();
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="grad-${initial}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" style="stop-color:${color};stop-opacity:0.3" />
+        <stop offset="100%" style="stop-color:${color};stop-opacity:0.8" />
+      </linearGradient>
+    </defs>
+    <rect width="100" height="100" fill="url(#grad-${initial})" rx="20" />
+    <circle cx="50" cy="50" r="30" fill="white" fill-opacity="0.2" />
+    <text x="50" y="55" font-family="Inter, sans-serif" font-size="40" font-weight="900" fill="white" text-anchor="middle" dominant-baseline="middle">${initial}</text>
+    <text x="50" y="85" font-family="Inter, sans-serif" font-size="8" font-weight="700" fill="white" text-anchor="middle" opacity="0.9" letter-spacing="1">${skill.toUpperCase().split(' ')[0]}</text>
+  </svg>`;
 };
 
 export const generateAgentAvatar = async (name: string, skill: string): Promise<string> => {
@@ -282,18 +314,24 @@ export const generateAgentAvatar = async (name: string, skill: string): Promise<
     let svg = response.text || '';
     svg = svg.replace(/```xml/g, '').replace(/```svg/g, '').replace(/```/g, '').trim();
     
+    // Validate SVG simple check
     if (svg && svg.includes('<svg')) {
         avatarCache[cacheKey] = svg;
+        return svg;
     }
-    return svg;
+    throw new Error("Invalid SVG generated");
   };
 
   try {
-    // Retry slightly more aggressively for avatars since they are lighter calls
-    return await retryOperation(generate, 2, 3000);
-  } catch (error) {
-    console.error("Avatar Gen Error:", error);
-    // Graceful fallback SVG if all retries fail
-    return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#cbd5e1"/><text x="50" y="65" font-size="40" text-anchor="middle" fill="white" font-family="sans-serif">${name.charAt(0)}</text></svg>`;
+    // Attempt to generate with AI
+    // We limit retries to 1 for avatars to avoid blocking UI if quota is tight
+    return await retryOperation(generate, 1, 1000);
+  } catch (error: any) {
+    // Graceful Fallback: If Rate Limited or Error, return deterministic local SVG
+    // This fixes the 429 app crash loop
+    console.warn(`Avatar generation for ${name} switched to fallback due to: ${error.message}`);
+    const fallback = generateFallbackAvatar(name, skill);
+    avatarCache[cacheKey] = fallback; // Cache the fallback so we don't retry locally constantly
+    return fallback;
   }
 };
