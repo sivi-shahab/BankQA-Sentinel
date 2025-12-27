@@ -296,7 +296,7 @@ const App: React.FC = () => {
       case 'CRM_DASHBOARD': return 'CRM Intelligence';
       case 'MANAGEMENT': return 'Management Center';
       case 'AUDIT_TRAIL': return 'Compliance Audit Trail';
-      default: return 'OmniAssure';
+      default: return 'ProofPoint.AI';
     }
   };
 
@@ -309,7 +309,7 @@ const App: React.FC = () => {
               <ShieldCheck className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-black text-slate-800 tracking-tight leading-none mb-1">OMNIASSURE</h1>
+              <h1 className="text-sm font-black text-slate-800 tracking-tight leading-none mb-1">PROOFPOINT.AI</h1>
               <span className="bg-indigo-50 text-indigo-600 text-[9px] px-2 py-0.5 rounded-full border border-indigo-100 uppercase tracking-widest font-black">FinAI PRO</span>
             </div>
           </div>

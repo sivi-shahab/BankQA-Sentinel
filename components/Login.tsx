@@ -38,7 +38,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm mb-4 border border-white/20 shadow-lg">
                     <ShieldCheck className="w-10 h-10 text-white" />
                 </div>
-                <h1 className="text-3xl font-bold text-white tracking-tight">OmniAssure FinAI</h1>
+                <h1 className="text-3xl font-bold text-white tracking-tight">ProofPoint.AI</h1>
                 <p className="text-indigo-100 mt-2 text-sm font-medium tracking-wide opacity-90">Enterprise Performance & Compliance Intelligence</p>
              </div>
         </div>
@@ -104,7 +104,7 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
                       <LockIcon className="w-3 h-3" />
                       <span>End-to-End Enterprise Encryption</span>
                   </div>
-                  <p className="text-[10px] text-slate-300 italic">Secure access portal for OmniAssure Elite instances.</p>
+                  <p className="text-[10px] text-slate-300 italic">Secure access portal for ProofPoint.AI Elite instances.</p>
                 </div>
             </div>
         </div>

@@ -16,7 +16,7 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ dashboardContext, 
     {
       id: 'welcome',
       role: 'model',
-      text: 'OmniAssure Analyst active. Context synced with Dashboard DB. How can I help with leads, retention, or audits today?',
+      text: 'ProofPoint.AI Analyst active. Context synced with Dashboard DB. How can I help with leads, retention, or audits today?',
       timestamp: new Date()
     }
   ]);
@@ -99,7 +99,7 @@ export const ChatAssistant: React.FC<ChatAssistantProps> = ({ dashboardContext, 
             <Bot className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="font-black text-white text-sm tracking-tight leading-none mb-1">OmniAssure Analyst</h3>
+            <h3 className="font-black text-white text-sm tracking-tight leading-none mb-1">ProofPoint.AI Analyst</h3>
             <div className="flex items-center gap-1.5">
                 <Database className="w-2.5 h-2.5 text-emerald-400" />
                 <span className="text-[9px] text-emerald-400 font-black uppercase tracking-widest">Context Synchronized</span>

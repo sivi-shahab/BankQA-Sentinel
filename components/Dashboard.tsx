@@ -91,7 +91,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="md:col-span-2 bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden flex items-center justify-between border border-slate-800">
            <div className="relative z-10">
-              <h2 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">OmniScore Quality Audit</h2>
+              <h2 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">ProofScore Quality Audit</h2>
               <div className="flex items-end gap-3">
                  <span className="text-6xl font-black tracking-tighter">{data.qualityScore}</span>
                  <span className="text-xl text-slate-500 font-bold mb-2">/100</span>
@@ -426,7 +426,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                     >
                         {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : exportSuccess ? <CheckCircle2 className="w-5 h-5" /> : <><ExternalLink className="w-5 h-5" /> COMMIT TO CRM</>}
                     </button>
-                    <p className="text-[8px] text-center text-slate-300 mt-4 font-black tracking-widest uppercase">Secured by OmniAssure FinAI</p>
+                    <p className="text-[8px] text-center text-slate-300 mt-4 font-black tracking-widest uppercase">Secured by ProofPoint.AI</p>
                 </div>
             </div>
         </div>
