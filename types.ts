@@ -119,6 +119,15 @@ export interface KnowledgeDocument {
   uploadDate: Date;
 }
 
+export interface Campaign {
+  id: string;
+  name: string;
+  status: 'ACTIVE' | 'SCHEDULED' | 'ARCHIVED';
+  uploadDate: Date;
+  fileName: string;
+  productType: string;
+}
+
 // CRM TYPES - ENHANCED FOR HYPER-INTELLIGENCE
 export interface Lead {
   id: string;

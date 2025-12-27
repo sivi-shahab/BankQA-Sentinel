@@ -4,6 +4,30 @@ import { CallAnalysis, PiiSettings, DictionaryItem, FullDashboardContext } from 
 // In-memory cache for avatars to prevent rate limiting (429)
 const avatarCache: Record<string, string> = {};
 
+// Helper: Exponential Backoff Retry
+async function retryOperation<T>(operation: () => Promise<T>, maxRetries = 3, initialDelay = 2000): Promise<T> {
+  let delay = initialDelay;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await operation();
+    } catch (error: any) {
+      const isRateLimit = error?.status === 429 || error?.code === 429 || error?.message?.includes('429') || error?.message?.includes('Quota exceeded');
+      
+      // If it's a rate limit error and we have retries left
+      if (isRateLimit && i < maxRetries - 1) {
+        console.warn(`Gemini API Rate Limit hit. Retrying in ${delay}ms... (Attempt ${i + 1}/${maxRetries})`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff (2s, 4s, 8s...)
+        continue;
+      }
+      
+      // If it's not a rate limit error, or we're out of retries, throw
+      throw error;
+    }
+  }
+  throw new Error("Operation failed after max retries");
+}
+
 const analysisSchema = {
   type: Type.OBJECT,
   properties: {
@@ -127,7 +151,7 @@ export const analyzeTelemarketingAudio = async (
 ): Promise<CallAnalysis> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
-  try {
+  const performAnalysis = async () => {
     let systemPrompt = `You are a Senior Quality Control Auditor for a major bank. Analyze this telemarketing call recording.
     1. Transcribe accurately with speaker labels (Agent vs Customer).
     2. Evaluation Metrics:
@@ -172,10 +196,10 @@ export const analyzeTelemarketingAudio = async (
 
     if (!response.text) throw new Error("No response generated");
     return JSON.parse(response.text.trim()) as CallAnalysis;
-  } catch (error: any) {
-    console.error("Gemini Analysis Error:", error);
-    throw error;
-  }
+  };
+
+  // Use retry logic
+  return retryOperation(performAnalysis);
 };
 
 export const sendChatQuery = async (
@@ -185,7 +209,8 @@ export const sendChatQuery = async (
   referenceText: string = ''
 ): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  try {
+  
+  const performChat = async () => {
     const systemInstruction = `You are the OmniAssure FinAI Intelligence Assistant.
     You have absolute access to all data on the dashboard for deep context analysis.
     `;
@@ -198,10 +223,9 @@ export const sendChatQuery = async (
 
     const result = await chat.sendMessage({ message: currentMessage });
     return result.text || "No response.";
-  } catch (error) {
-    console.error("Chat Error:", error);
-    throw error;
-  }
+  };
+
+  return retryOperation(performChat);
 };
 
 export const generateAgentAvatar = async (name: string, skill: string): Promise<string> => {
@@ -211,7 +235,8 @@ export const generateAgentAvatar = async (name: string, skill: string): Promise<
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  try {
+  
+  const generate = async () => {
     const prompt = `Generate a modern, abstract, geometric SVG icon code for a user avatar.
     Name: ${name} (Use this for creative seed, do not put text in image).
     Top Skill: ${skill}.
@@ -233,17 +258,20 @@ export const generateAgentAvatar = async (name: string, skill: string): Promise<
     });
 
     let svg = response.text || '';
-    // Clean up potential markdown code blocks if the model includes them
     svg = svg.replace(/```xml/g, '').replace(/```svg/g, '').replace(/```/g, '').trim();
     
     if (svg && svg.includes('<svg')) {
         avatarCache[cacheKey] = svg;
     }
-
     return svg;
+  };
+
+  try {
+    // Retry slightly more aggressively for avatars since they are lighter calls
+    return await retryOperation(generate, 2, 3000);
   } catch (error) {
     console.error("Avatar Gen Error:", error);
-    // Fallback SVG if generation fails (don't cache failure to allow retry)
+    // Graceful fallback SVG if all retries fail
     return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#cbd5e1"/><text x="50" y="65" font-size="40" text-anchor="middle" fill="white" font-family="sans-serif">${name.charAt(0)}</text></svg>`;
   }
 };

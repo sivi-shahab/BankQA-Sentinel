@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { 
   Target, Users, Zap, ShieldCheck, 
@@ -164,7 +165,7 @@ interface LeadDetailProps {
 }
 
 const LeadDetailPanel: React.FC<LeadDetailProps> = ({ lead, onClose }) => {
-    const formatIDR = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+    const formatIDR = (val: any) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(val));
     
     return (
         <div className="fixed inset-0 z-[60] flex justify-end">
@@ -279,7 +280,7 @@ interface CustomerDetailProps {
 }
 
 const CustomerDetailPanel: React.FC<CustomerDetailProps> = ({ customer, onClose }) => {
-    const formatIDR = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+    const formatIDR = (val: any) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(val));
     
     const portfolioData = [
         { name: 'Savings', value: customer.portfolio.savings },
@@ -382,7 +383,7 @@ const CustomerDetailPanel: React.FC<CustomerDetailProps> = ({ customer, onClose 
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
                                     </Pie>
-                                    <Tooltip formatter={(value: number | string) => formatIDR(Number(value))} />
+                                    <Tooltip formatter={(value: any) => formatIDR(value)} />
                                     <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
                                 </RePieChart>
                             </ResponsiveContainer>
@@ -449,7 +450,7 @@ export const CRMDashboard: React.FC = () => {
   const [isGeneratingForecast, setIsGeneratingForecast] = useState(false);
   const [showForecastResult, setShowForecastResult] = useState(false);
 
-  const formatIDR = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+  const formatIDR = (val: any) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(val));
 
   const handleGenerateForecast = () => {
       setIsGeneratingForecast(true);
@@ -903,7 +904,7 @@ export const CRMDashboard: React.FC = () => {
                         ]} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="tier" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 'black', fill: '#64748b' }} />
-                            <YAxis axisLine={false} tickLine={false} tickFormatter={(v: number) => `Rp${v/1000000}M`} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                            <YAxis axisLine={false} tickLine={false} tickFormatter={(v: any) => `Rp${Number(v)/1000000}M`} tick={{ fontSize: 10, fontWeight: 'bold' }} />
                             <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.2)' }} />
                             <Legend iconType="circle" />
                             <Bar dataKey="Savings" fill="#6366f1" stackId="a" radius={[0, 0, 0, 0]} />

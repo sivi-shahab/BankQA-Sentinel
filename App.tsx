@@ -10,8 +10,9 @@ import { TeamAnalytics } from './components/TeamAnalytics';
 import { ConversationResume } from './components/ConversationResume';
 import { CRMDashboard } from './components/CRMDashboard';
 import { AuditTrail } from './components/AuditTrail';
+import { CampaignManager } from './components/CampaignManager';
 import { analyzeTelemarketingAudio } from './services/geminiService';
-import { AnalysisStatus, CallAnalysis, AppView, PiiSettings, DictionaryItem, AuditLog, FullDashboardContext, KnowledgeDocument } from './types';
+import { AnalysisStatus, CallAnalysis, AppView, PiiSettings, DictionaryItem, AuditLog, FullDashboardContext, KnowledgeDocument, Campaign } from './types';
 import { 
   ShieldCheck, 
   LayoutDashboard, 
@@ -134,6 +135,7 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<AnalysisStatus>(AnalysisStatus.IDLE);
   const [analysisResult, setAnalysisResult] = useState<CallAnalysis | null>(null);
   const [knowledgeDocs, setKnowledgeDocs] = useState<KnowledgeDocument[]>([]);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   
   const [piiSettings, setPiiSettings] = useState<PiiSettings>({
     redactEmail: true,
@@ -402,14 +404,27 @@ const App: React.FC = () => {
               </div>
               
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                {/* CAMPAIGN MANAGER - NEW FEATURE */}
+                <div className="xl:col-span-2">
+                   <CampaignManager 
+                      campaigns={campaigns}
+                      onCampaignsChange={(newCampaigns) => {
+                          setCampaigns(newCampaigns);
+                          addAuditLog('CAMPAIGN_UPDATE', 'Product Configuration', 'SUCCESS');
+                      }}
+                   />
+                </div>
+
                 <div className="xl:col-span-1">
                   <KnowledgeBase documents={knowledgeDocs} onDocumentsChange={(docs) => {
                     setKnowledgeDocs(docs);
                     addAuditLog('KNOWLEDGE_BASE_UPDATE', 'Library Resource Change', 'SUCCESS');
                   }} />
                 </div>
+              </div>
 
-                <div className="xl:col-span-2 bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm flex flex-col h-[500px]">
+              {/* Glossary (Moved to bottom full width if needed, or keep in grid) */}
+              <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm flex flex-col h-[400px]">
                   <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-3">
                       <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl border border-amber-100 shadow-sm">
@@ -422,19 +437,25 @@ const App: React.FC = () => {
                     </div>
                   </div>
                   <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3">
-                    {dictionary.map((item) => (
-                        <div key={item.id} className="flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-amber-200 group transition-all">
-                          <div className="flex-1 grid grid-cols-3 gap-6">
-                            <div className="font-black text-amber-600 text-xs tracking-tight uppercase">{item.term}</div>
-                            <div className="text-slate-600 text-[11px] font-bold leading-relaxed">{item.definition}</div>
-                            <div className="text-slate-400 text-[10px] italic font-medium">Context: {item.context}</div>
-                          </div>
-                          <button onClick={() => removeDictionaryItem(item.id)} className="p-2.5 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-4 h-4" /></button>
+                    {dictionary.length === 0 ? (
+                        <div className="h-full flex flex-col items-center justify-center text-slate-300">
+                           <BookMarked className="w-8 h-8 mb-2 opacity-50" />
+                           <p className="text-xs font-bold uppercase tracking-widest">Glossary Empty</p>
                         </div>
-                    ))}
+                    ) : (
+                        dictionary.map((item) => (
+                            <div key={item.id} className="flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-amber-200 group transition-all">
+                              <div className="flex-1 grid grid-cols-3 gap-6">
+                                <div className="font-black text-amber-600 text-xs tracking-tight uppercase">{item.term}</div>
+                                <div className="text-slate-600 text-[11px] font-bold leading-relaxed">{item.definition}</div>
+                                <div className="text-slate-400 text-[10px] italic font-medium">Context: {item.context}</div>
+                              </div>
+                              <button onClick={() => removeDictionaryItem(item.id)} className="p-2.5 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-4 h-4" /></button>
+                            </div>
+                        ))
+                    )}
                   </div>
                 </div>
-              </div>
             </div>
           ) : (
             <div className="flex-1"><TeamAnalytics /></div>
