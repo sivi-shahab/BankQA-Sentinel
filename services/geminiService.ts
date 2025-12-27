@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { CallAnalysis, PiiSettings, DictionaryItem, FullDashboardContext } from "../types";
 
@@ -152,6 +153,24 @@ export const analyzeTelemarketingAudio = async (
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   
   const performAnalysis = async () => {
+    // Construct PII Redaction Instructions based on settings
+    const piiInstructions = Object.entries(piiSettings)
+      .filter(([key, value]) => value === true)
+      .map(([key]) => {
+        switch(key) {
+          case 'redactEmail': return '- Redact Email Addresses (replace with [EMAIL_REDACTED])';
+          case 'redactNIK': return '- Mask NIK/ID Numbers (replace with [ID_REDACTED])';
+          case 'redactMotherName': return '- Redact Mother\'s Maiden Name (replace with [MOTHER_REDACTED])';
+          case 'redactCustomerName': return '- Redact Customer Name (replace with [NAME_REDACTED])';
+          case 'redactPhone': return '- Redact Phone Numbers (replace with [PHONE_REDACTED])';
+          case 'redactDOB': return '- Redact Date of Birth (replace with [DOB_REDACTED])';
+          case 'redactAddress': return '- Redact Residential Addresses (replace with [ADDRESS_REDACTED])';
+          default: return '';
+        }
+      })
+      .filter(s => s !== '')
+      .join('\n');
+
     let systemPrompt = `You are a Senior Quality Control Auditor for a major bank. Analyze this telemarketing call recording.
     1. Transcribe accurately with speaker labels (Agent vs Customer).
     2. Evaluation Metrics:
@@ -165,7 +184,10 @@ export const analyzeTelemarketingAudio = async (
     5. CRM Data Extraction: Parse all loan/product details precisely.
     
     *** PRIVACY & REDACTION RULES ***
-    Follow piiSettings for redaction.
+    You MUST apply the following redaction rules to the transcript and extracted info:
+    ${piiInstructions || 'No redaction required.'}
+
+    If the setting is enabled, ensure the extraction output contains the redacted placeholder, not the original value.
     `;
 
     if (referenceText) {

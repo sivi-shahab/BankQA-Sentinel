@@ -423,9 +423,9 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Glossary (Moved to bottom full width if needed, or keep in grid) */}
-              <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm flex flex-col h-[400px]">
-                  <div className="flex items-center justify-between mb-8">
+              {/* Glossary */}
+              <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm flex flex-col h-[600px]">
+                  <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                       <div className="p-3 bg-amber-50 text-amber-600 rounded-2xl border border-amber-100 shadow-sm">
                         <VenetianMask className="w-6 h-6" />
@@ -436,21 +436,64 @@ const App: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3">
+
+                  {/* ADD NEW TERM FORM */}
+                  <div className="mb-6 bg-slate-50 p-6 rounded-3xl border border-slate-100 shadow-inner">
+                      <div className="flex items-center gap-2 mb-4">
+                         <BookMarked className="w-4 h-4 text-slate-400" />
+                         <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">New Dictionary Entry</span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                          <input 
+                            type="text" 
+                            placeholder="Term (e.g. KPR, BI Fast)" 
+                            value={newDictItem.term}
+                            onChange={(e) => setNewDictItem({...newDictItem, term: e.target.value})}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
+                          />
+                          <input 
+                            type="text" 
+                            placeholder="Context (e.g. Mortgage Product)" 
+                            value={newDictItem.context}
+                            onChange={(e) => setNewDictItem({...newDictItem, context: e.target.value})}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 shadow-sm"
+                          />
+                          <input 
+                            type="text" 
+                            placeholder="Full Definition" 
+                            value={newDictItem.definition}
+                            onChange={(e) => setNewDictItem({...newDictItem, definition: e.target.value})}
+                            className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-amber-500 shadow-sm md:col-span-2"
+                          />
+                      </div>
+                      <button 
+                        onClick={addDictionaryItem}
+                        disabled={!newDictItem.term || !newDictItem.definition}
+                        className="w-full py-3 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-colors shadow-lg shadow-slate-300 hover:shadow-amber-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        <Plus className="w-4 h-4" /> ADD TERM
+                      </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3 px-1 pb-1">
                     {dictionary.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-slate-300">
-                           <BookMarked className="w-8 h-8 mb-2 opacity-50" />
+                        <div className="h-full flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-100 rounded-3xl">
+                           <BookMarked className="w-12 h-12 mb-3 opacity-50" />
                            <p className="text-xs font-bold uppercase tracking-widest">Glossary Empty</p>
+                           <p className="text-[10px] font-medium mt-1">Add terms to improve AI accuracy</p>
                         </div>
                     ) : (
                         dictionary.map((item) => (
-                            <div key={item.id} className="flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-amber-200 group transition-all">
-                              <div className="flex-1 grid grid-cols-3 gap-6">
-                                <div className="font-black text-amber-600 text-xs tracking-tight uppercase">{item.term}</div>
+                            <div key={item.id} className="flex items-center justify-between p-5 bg-white border border-slate-100 rounded-2xl shadow-sm hover:border-amber-200 hover:shadow-md group transition-all">
+                              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 items-center">
+                                <div className="font-black text-amber-600 text-sm tracking-tight uppercase">{item.term}</div>
                                 <div className="text-slate-600 text-[11px] font-bold leading-relaxed">{item.definition}</div>
-                                <div className="text-slate-400 text-[10px] italic font-medium">Context: {item.context}</div>
+                                <div className="text-slate-400 text-[10px] italic font-medium flex items-center gap-1">
+                                    <span className="w-1.5 h-1.5 bg-slate-300 rounded-full"></span>
+                                    {item.context || 'General Context'}
+                                </div>
                               </div>
-                              <button onClick={() => removeDictionaryItem(item.id)} className="p-2.5 text-slate-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"><Trash2 className="w-4 h-4" /></button>
+                              <button onClick={() => removeDictionaryItem(item.id)} className="p-2.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all ml-4"><Trash2 className="w-4 h-4" /></button>
                             </div>
                         ))
                     )}
