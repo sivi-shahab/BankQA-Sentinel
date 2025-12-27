@@ -37,7 +37,12 @@ import {
   X, Phone, Mail, FileText, Check, ChevronRight,
   Wallet, PieChart as PieChartIcon, ArrowRight, Loader2,
   Rocket,
-  Megaphone
+  Megaphone,
+  Printer,
+  Download,
+  Share2,
+  Table,
+  UserMinus
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -444,6 +449,368 @@ const CustomerDetailPanel: React.FC<CustomerDetailProps> = ({ customer, onClose 
     );
 };
 
+// --- SEGMENT ANALYSIS MODAL ---
+interface SegmentAnalysisProps {
+    segment: SegmentGroup;
+    onClose: () => void;
+}
+
+const SegmentAnalysisModal: React.FC<SegmentAnalysisProps> = ({ segment, onClose }) => {
+    const formatIDR = (val: any) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(val));
+    
+    // Derived Mock Data for Visualization
+    const totalAUM = segment.count * segment.avgValue;
+    const churnTrendData = [
+        { month: 'Jan', rate: segment.riskLevel === 'HIGH' ? 12 : 2 },
+        { month: 'Feb', rate: segment.riskLevel === 'HIGH' ? 14 : 2.2 },
+        { month: 'Mar', rate: segment.riskLevel === 'HIGH' ? 18 : 2.1 },
+        { month: 'Apr', rate: segment.riskLevel === 'HIGH' ? 22 : 1.8 },
+        { month: 'May', rate: segment.riskLevel === 'HIGH' ? 25 : 1.5 },
+        { month: 'Jun', rate: segment.riskLevel === 'HIGH' ? 28 : 1.2 },
+    ];
+
+    const riskFactors = [
+        { name: 'Rate Competitiveness', value: 45 },
+        { name: 'Service Quality', value: 30 },
+        { name: 'Competitor Offer', value: 15 },
+        { name: 'Life Event', value: 10 },
+    ];
+
+    const mockMembers = [
+        { name: 'Aditya W', balance: segment.avgValue * 1.2, risk: segment.riskLevel === 'HIGH' ? 85 : 12 },
+        { name: 'Sarah J', balance: segment.avgValue * 0.9, risk: segment.riskLevel === 'HIGH' ? 78 : 5 },
+        { name: 'Budi P', balance: segment.avgValue * 1.0, risk: segment.riskLevel === 'HIGH' ? 65 : 8 },
+        { name: 'Citra L', balance: segment.avgValue * 1.5, risk: segment.riskLevel === 'HIGH' ? 92 : 2 },
+    ];
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
+            <div className="relative w-full max-w-4xl bg-white rounded-[32px] shadow-2xl animate-slide-up flex flex-col max-h-[90vh] overflow-hidden">
+                
+                {/* Header */}
+                <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div className="flex items-center gap-4">
+                        <div className={`p-3 rounded-2xl shadow-lg ${
+                            segment.riskLevel === 'HIGH' ? 'bg-rose-500 text-white shadow-rose-200' : 
+                            segment.riskLevel === 'MEDIUM' ? 'bg-amber-500 text-white shadow-amber-200' : 'bg-emerald-500 text-white shadow-emerald-200'
+                        }`}>
+                            <Users className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <h2 className="text-xl font-black text-slate-800 tracking-tight">{segment.name}</h2>
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase border ${
+                                    segment.riskLevel === 'HIGH' ? 'bg-rose-50 text-rose-600 border-rose-100' :
+                                    segment.riskLevel === 'MEDIUM' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                }`}>{segment.riskLevel} RISK SEGMENT</span>
+                            </div>
+                            <p className="text-xs font-medium text-slate-400 uppercase tracking-widest">Total Segment Value: {formatIDR(totalAUM)}</p>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2.5 text-slate-400 hover:bg-slate-100 rounded-xl transition-all">
+                        <X className="w-5 h-5" />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8">
+                    
+                    {/* Key Metrics */}
+                    <div className="grid grid-cols-3 gap-6">
+                        <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Population Count</div>
+                            <div className="text-3xl font-black text-slate-800 tracking-tight">{segment.count}</div>
+                            <div className="text-[9px] font-bold text-slate-400 mt-1">Accounts</div>
+                        </div>
+                        <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Avg. Asset Value</div>
+                            <div className="text-xl font-black text-slate-800 tracking-tight truncate">{formatIDR(segment.avgValue)}</div>
+                        </div>
+                        <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Predicted Churn Rate</div>
+                            <div className={`text-3xl font-black tracking-tight ${
+                                segment.riskLevel === 'HIGH' ? 'text-rose-600' : 'text-emerald-600'
+                            }`}>{segment.riskLevel === 'HIGH' ? '28.4%' : '1.2%'}</div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Retention Trend Chart */}
+                        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6">Retention Stability Trend</h3>
+                            <div className="h-[200px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <AreaChart data={churnTrendData}>
+                                        <defs>
+                                            <linearGradient id="colorRate" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={segment.riskLevel === 'HIGH' ? '#f43f5e' : '#10b981'} stopOpacity={0.1}/>
+                                                <stop offset="95%" stopColor={segment.riskLevel === 'HIGH' ? '#f43f5e' : '#10b981'} stopOpacity={0}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                        <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#94a3b8' }} />
+                                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                        <Area type="monotone" dataKey="rate" stroke={segment.riskLevel === 'HIGH' ? '#f43f5e' : '#10b981'} strokeWidth={3} fillOpacity={1} fill="url(#colorRate)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+
+                         {/* Risk Factor Breakdown */}
+                        <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6">Primary Risk Drivers</h3>
+                            <div className="space-y-4">
+                                {riskFactors.map((factor, idx) => (
+                                    <div key={idx}>
+                                        <div className="flex justify-between text-xs font-bold text-slate-600 mb-1">
+                                            <span>{factor.name}</span>
+                                            <span>{factor.value}%</span>
+                                        </div>
+                                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                            <div className="h-full bg-slate-800 rounded-full" style={{ width: `${factor.value}%` }}></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Strategy & Members */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-1 bg-indigo-900 rounded-3xl p-6 text-white relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-6 opacity-10">
+                                <BrainCircuit className="w-24 h-24 text-white" />
+                            </div>
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Sparkles className="w-5 h-5 text-indigo-300" />
+                                    <h3 className="text-sm font-black uppercase tracking-widest">AI Strategy</h3>
+                                </div>
+                                <p className="text-sm leading-relaxed opacity-90 font-medium border-l-2 border-indigo-500 pl-4">
+                                    {segment.strategy}
+                                </p>
+                                <button className="mt-6 w-full py-3 bg-white text-indigo-900 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-50 transition-colors">
+                                    Generate Campaign
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest">Sample Segment Members</h3>
+                            </div>
+                            <table className="w-full text-left">
+                                <tbody className="divide-y divide-slate-50">
+                                    {mockMembers.map((member, idx) => (
+                                        <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                                            <td className="px-6 py-3 text-xs font-bold text-slate-700">{member.name}</td>
+                                            <td className="px-6 py-3 text-xs font-medium text-slate-500">{formatIDR(member.balance)}</td>
+                                            <td className="px-6 py-3">
+                                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${
+                                                    member.risk > 50 ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
+                                                }`}>
+                                                    {member.risk}% Risk
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- CAMPAIGN REPORT MODAL ---
+interface CampaignReportProps {
+  campaign: Campaign;
+  onClose: () => void;
+}
+
+const CampaignReportModal: React.FC<CampaignReportProps> = ({ campaign, onClose }) => {
+    const [downloading, setDownloading] = useState(false);
+    
+    // Mock data generation based on campaign ID for consistency
+    const seed = campaign.id.charCodeAt(0);
+    const channelData = [
+        { name: 'Telesales', value: 45 + (seed % 10) },
+        { name: 'Email', value: 25 + (seed % 5) },
+        { name: 'SMS', value: 15 + (seed % 5) },
+        { name: 'Social', value: 100 - (45 + 25 + 15 + (seed % 20)) }
+    ];
+    
+    const performanceTrend = [
+        { day: 'W1', leads: 120, conversions: 12 },
+        { day: 'W2', leads: 250, conversions: 28 },
+        { day: 'W3', leads: 480, conversions: 55 },
+        { day: 'W4', leads: 310, conversions: 42 },
+        { day: 'W5', leads: 520, conversions: 89 },
+    ];
+
+    const handleDownload = () => {
+        setDownloading(true);
+        setTimeout(() => setDownloading(false), 2000);
+    };
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-4">
+            <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={onClose} />
+            <div className="relative w-full max-w-4xl bg-white rounded-[32px] shadow-2xl animate-slide-up flex flex-col max-h-[90vh] overflow-hidden">
+                
+                {/* Header */}
+                <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-indigo-600 text-white rounded-2xl shadow-lg shadow-indigo-100">
+                            <FileText className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <h2 className="text-xl font-black text-slate-800 tracking-tight">{campaign.name}</h2>
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase border ${
+                                    campaign.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-500 border-slate-200'
+                                }`}>{campaign.status}</span>
+                            </div>
+                            <p className="text-xs font-medium text-slate-400 uppercase tracking-widest">Report Generated: {new Date().toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-2">
+                         <button className="p-2.5 text-slate-400 hover:bg-slate-100 rounded-xl transition-all">
+                             <Share2 className="w-5 h-5" />
+                         </button>
+                         <button className="p-2.5 text-slate-400 hover:bg-slate-100 rounded-xl transition-all">
+                             <Printer className="w-5 h-5" />
+                         </button>
+                         <button 
+                             onClick={onClose}
+                             className="p-2.5 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-xl transition-all"
+                         >
+                             <X className="w-5 h-5" />
+                         </button>
+                    </div>
+                </div>
+
+                {/* Body - Scrollable */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-8 bg-slate-50/30">
+                    
+                    {/* Top KPIs */}
+                    <div className="grid grid-cols-4 gap-4">
+                        <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Revenue</div>
+                            <div className="text-2xl font-black text-slate-800 tracking-tight">Rp {(campaign.stats?.roi || 0) * 15000000 / 100}M</div>
+                            <div className="text-[9px] font-bold text-emerald-500 mt-1 flex items-center gap-1">
+                                <ArrowUpRight className="w-3 h-3" /> +12.5% vs Target
+                            </div>
+                        </div>
+                        <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Cost Per Acquisition</div>
+                            <div className="text-2xl font-black text-slate-800 tracking-tight">Rp 85,000</div>
+                            <div className="text-[9px] font-bold text-emerald-500 mt-1 flex items-center gap-1">
+                                <TrendingDown className="w-3 h-3" /> -5.2% Efficient
+                            </div>
+                        </div>
+                        <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">ROI</div>
+                            <div className="text-2xl font-black text-indigo-600 tracking-tight">{campaign.stats?.roi}%</div>
+                        </div>
+                        <div className="p-5 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Conversion Rate</div>
+                            <div className="text-2xl font-black text-emerald-500 tracking-tight">{campaign.stats?.conversionRate}%</div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-8">
+                        {/* Channel Performance */}
+                        <div className="col-span-1 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6">Channel Contribution</h3>
+                            <div className="h-[200px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RePieChart>
+                                        <Pie data={channelData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                                            {channelData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
+                                        </Pie>
+                                        <Tooltip />
+                                    </RePieChart>
+                                </ResponsiveContainer>
+                            </div>
+                            <div className="space-y-2 mt-4">
+                                {channelData.map((item, idx) => (
+                                    <div key={idx} className="flex items-center justify-between text-xs">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx] }}></div>
+                                            <span className="font-bold text-slate-600">{item.name}</span>
+                                        </div>
+                                        <span className="font-black text-slate-800">{item.value}%</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Trend Chart */}
+                        <div className="col-span-2 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-6">Weekly Conversion Trend</h3>
+                            <div className="h-[250px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={performanceTrend}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                        <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#94a3b8' }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 'bold', fill: '#94a3b8' }} />
+                                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                                        <Line type="monotone" dataKey="conversions" stroke="#10b981" strokeWidth={3} dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }} />
+                                        <Line type="monotone" dataKey="leads" stroke="#e2e8f0" strokeWidth={3} dot={false} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* AI Executive Summary */}
+                    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-8 opacity-10">
+                            <BrainCircuit className="w-32 h-32" />
+                        </div>
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-3 mb-4">
+                                <Sparkles className="w-5 h-5 text-indigo-400" />
+                                <h3 className="text-sm font-black text-indigo-200 uppercase tracking-widest">AI Executive Summary</h3>
+                            </div>
+                            <p className="text-sm leading-relaxed opacity-90 font-medium max-w-2xl">
+                                Campaign <span className="text-white font-bold">{campaign.name}</span> is outperforming historical benchmarks by 18%. 
+                                Telesales channel shows highest conversion quality, particularly with the "Priority" segment. 
+                                Recommended action: Increase budget allocation to telesales for remaining duration and retarget non-converters via Email with a sweetened offer.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="px-8 py-6 bg-white border-t border-slate-100 flex items-center justify-between">
+                    <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">
+                        Generated by ProofPoint.AI Intelligence Engine
+                    </div>
+                    <button 
+                        onClick={handleDownload}
+                        disabled={downloading}
+                        className={`px-8 py-4 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-lg ${
+                            downloading ? 'bg-emerald-500 text-white cursor-default' : 'bg-slate-900 text-white hover:bg-indigo-600 hover:shadow-indigo-200'
+                        }`}
+                    >
+                        {downloading ? (
+                            <><CheckCircle2 className="w-4 h-4 animate-bounce" /> Report Downloaded</>
+                        ) : (
+                            <><Download className="w-4 h-4" /> Download PDF Report</>
+                        )}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 interface CRMDashboardProps {
     campaigns?: Campaign[];
 }
@@ -452,6 +819,8 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({ campaigns = [] }) =>
   const [activeTab, setActiveTab] = useState<'ACQUISITION' | 'RETENTION' | 'CAMPAIGNS'>('ACQUISITION');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer360 | null>(null);
+  const [reportCampaign, setReportCampaign] = useState<Campaign | null>(null);
+  const [selectedSegment, setSelectedSegment] = useState<SegmentGroup | null>(null);
   const [isGeneratingForecast, setIsGeneratingForecast] = useState(false);
   const [showForecastResult, setShowForecastResult] = useState(false);
   
@@ -480,6 +849,16 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({ campaigns = [] }) =>
       {/* CUSTOMER DETAIL PANEL OVERLAY */}
       {selectedCustomer && (
           <CustomerDetailPanel customer={selectedCustomer} onClose={() => setSelectedCustomer(null)} />
+      )}
+      
+      {/* CAMPAIGN REPORT MODAL OVERLAY */}
+      {reportCampaign && (
+          <CampaignReportModal campaign={reportCampaign} onClose={() => setReportCampaign(null)} />
+      )}
+
+      {/* SEGMENT ANALYSIS MODAL OVERLAY */}
+      {selectedSegment && (
+          <SegmentAnalysisModal segment={selectedSegment} onClose={() => setSelectedSegment(null)} />
       )}
 
       {/* FORECAST TOAST/OVERLAY */}
@@ -971,7 +1350,11 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({ campaigns = [] }) =>
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-8">Segment Churn Risk Index</h3>
                 <div className="space-y-6 flex-1">
                     {CRM_STATS.retention.segments.map((segment, idx) => (
-                        <div key={idx} className="p-5 bg-slate-50 rounded-[28px] border border-slate-100 hover:border-indigo-100 hover:bg-white transition-all group cursor-pointer shadow-sm hover:shadow-md">
+                        <div 
+                            key={idx} 
+                            onClick={() => setSelectedSegment(segment)}
+                            className="p-5 bg-slate-50 rounded-[28px] border border-slate-100 hover:border-indigo-100 hover:bg-white transition-all group cursor-pointer shadow-sm hover:shadow-md"
+                        >
                             <div className="flex justify-between items-start mb-3">
                                 <div>
                                     <div className="text-sm font-black text-slate-800">{segment.name}</div>
@@ -1132,7 +1515,12 @@ export const CRMDashboard: React.FC<CRMDashboardProps> = ({ campaigns = [] }) =>
                        
                        <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                            <span>File: {camp.fileName.substring(0, 15)}...</span>
-                           <button className="text-indigo-600 hover:underline">View Report</button>
+                           <button 
+                                onClick={() => setReportCampaign(camp)}
+                                className="text-indigo-600 hover:underline hover:text-indigo-800 transition-colors"
+                           >
+                               View Report
+                           </button>
                        </div>
                    </div>
                ))}
