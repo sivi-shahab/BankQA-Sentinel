@@ -33,7 +33,9 @@ import {
   ShieldHalf,
   ArrowDownNarrowWide,
   ArrowUpNarrowWide,
-  Minus
+  Minus,
+  X, Phone, Mail, FileText, Check, ChevronRight,
+  Wallet, PieChart as PieChartIcon, ArrowRight, Loader2
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -131,6 +133,8 @@ const CRM_STATS: CRMStats = {
   }
 };
 
+const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#3b82f6'];
+
 const MoodIcon: React.FC<{ mood: 'POS' | 'NEU' | 'NEG' }> = ({ mood }) => {
     if (mood === 'POS') return <Smile className="w-3 h-3 text-emerald-500" />;
     if (mood === 'NEU') return <Meh className="w-3 h-3 text-amber-500" />;
@@ -153,12 +157,334 @@ const CreditScoreBadge: React.FC<{ score?: number }> = ({ score }) => {
     );
 };
 
+// --- LEAD DETAIL PANEL ---
+interface LeadDetailProps {
+    lead: Lead;
+    onClose: () => void;
+}
+
+const LeadDetailPanel: React.FC<LeadDetailProps> = ({ lead, onClose }) => {
+    const formatIDR = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+    
+    return (
+        <div className="fixed inset-0 z-[60] flex justify-end">
+            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity" onClick={onClose} />
+            <div className="relative w-full max-w-xl bg-white h-full shadow-2xl animate-slide-left overflow-y-auto border-l border-slate-200">
+                {/* Header */}
+                <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-start justify-between">
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-white border border-slate-200 px-2 py-0.5 rounded-md shadow-sm">{lead.id}</span>
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                {lead.kycStatus === 'Verified' && <CheckCircle2 className="w-3 h-3" />}
+                                {lead.kycStatus}
+                            </span>
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">{lead.name}</h2>
+                        <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
+                            <span className="flex items-center gap-1"><BrainCircuit className="w-3.5 h-3.5 text-indigo-500" /> Source: {lead.source}</span>
+                            <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5 text-amber-500" /> Last Active: {lead.lastActivity}</span>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="p-8 space-y-8">
+                    {/* Score Cards */}
+                    <div className="grid grid-cols-3 gap-4">
+                         <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-100 flex flex-col justify-between">
+                            <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Intent Score</span>
+                            <div className="text-3xl font-black text-indigo-600">{lead.score}<span className="text-sm text-indigo-300">/100</span></div>
+                         </div>
+                         <div className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col justify-between shadow-sm">
+                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Credit Score</span>
+                            <div className="text-3xl font-black text-slate-800">{lead.creditScore}</div>
+                         </div>
+                         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-100 flex flex-col justify-between">
+                            <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Est. Value</span>
+                            <div className="text-xl font-black text-emerald-600 truncate">{formatIDR(lead.expectedValue).replace('Rp', '')}</div>
+                         </div>
+                    </div>
+
+                    {/* AI Insight */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 p-3 opacity-5">
+                            <Sparkles className="w-24 h-24 text-indigo-600" />
+                        </div>
+                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <BrainCircuit className="w-4 h-4 text-indigo-600" /> FinAI Insight
+                        </h4>
+                        
+                        <div className="space-y-4 relative z-10">
+                            <div>
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Propensity Reason</label>
+                                <p className="text-sm font-medium text-slate-700 leading-relaxed">
+                                    {lead.propensityReason}. High correlation with <span className="font-bold text-indigo-600">{lead.productAffinity}</span> product suite.
+                                </p>
+                            </div>
+                            <div>
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Recommended Action</label>
+                                <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100 text-amber-700 text-xs font-bold">
+                                    <Clock className="w-4 h-4" /> Call between {lead.bestTimeToCall} for 45% higher conversion.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Contact Info Mock */}
+                    <div className="space-y-4">
+                        <h4 className="text-xs font-black text-slate-800 uppercase tracking-widest mb-2">Contact Details</h4>
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-white rounded-lg shadow-sm text-slate-500"><Phone className="w-4 h-4" /></div>
+                                    <span className="text-xs font-bold text-slate-600">+62 812-3456-7890</span>
+                                </div>
+                                <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded uppercase">Verified</span>
+                            </div>
+                            <div className="flex items-center justify-between p-3 rounded-xl border border-slate-100 bg-slate-50">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-white rounded-lg shadow-sm text-slate-500"><Mail className="w-4 h-4" /></div>
+                                    <span className="text-xs font-bold text-slate-600">prospect.lead@{lead.source.toLowerCase().replace(' ', '')}.com</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="pt-6 border-t border-slate-100 grid grid-cols-2 gap-3">
+                        <button className="py-4 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-200 flex items-center justify-center gap-2">
+                            <Phone className="w-4 h-4" /> Call Now
+                        </button>
+                        <button className="py-4 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-200 flex items-center justify-center gap-2">
+                            <MessageSquare className="w-4 h-4" /> WhatsApp
+                        </button>
+                        <button className="col-span-2 py-3 bg-white border border-slate-200 text-slate-500 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+                             <FileText className="w-4 h-4" /> Generate Proposal PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- CUSTOMER DETAIL PANEL ---
+interface CustomerDetailProps {
+    customer: Customer360;
+    onClose: () => void;
+}
+
+const CustomerDetailPanel: React.FC<CustomerDetailProps> = ({ customer, onClose }) => {
+    const formatIDR = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
+    
+    const portfolioData = [
+        { name: 'Savings', value: customer.portfolio.savings },
+        { name: 'Deposits', value: customer.portfolio.deposits },
+        { name: 'Invest', value: customer.portfolio.investment },
+        { name: 'Insur', value: customer.portfolio.insurance },
+        { name: 'Loans', value: customer.portfolio.loans },
+    ].filter(i => i.value > 0);
+
+    const totalAUM = Object.values(customer.portfolio).reduce((a: number, b: number) => a + b, 0);
+
+    return (
+        <div className="fixed inset-0 z-[60] flex justify-end">
+            <div className="absolute inset-0 bg-slate-900/20 backdrop-blur-sm transition-opacity" onClick={onClose} />
+            <div className="relative w-full max-w-2xl bg-white h-full shadow-2xl animate-slide-left overflow-y-auto border-l border-slate-200">
+                {/* Header */}
+                <div className="p-8 border-b border-slate-100 bg-slate-50/50 flex items-start justify-between">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
+                                customer.tier === 'Priority' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                                customer.tier === 'Gold' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-slate-100 text-slate-600 border-slate-200'
+                            }`}>{customer.tier} Tier</span>
+                            <div className="flex items-center gap-1 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <Activity className="w-3 h-3" />
+                                {customer.id}
+                            </div>
+                        </div>
+                        <h2 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">{customer.name}</h2>
+                        <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
+                            <span className="flex items-center gap-1"><HistoryIcon className="w-3.5 h-3.5 text-slate-400" /> Last Interaction: {customer.lastInteraction}</span>
+                        </div>
+                    </div>
+                    <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors">
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
+                {/* Content */}
+                <div className="p-8 space-y-8">
+                    
+                    {/* Churn Risk & Engagement */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className={`p-5 rounded-2xl border flex flex-col justify-between ${
+                            customer.churnRisk > 50 ? 'bg-rose-50 border-rose-100' : 'bg-emerald-50 border-emerald-100'
+                        }`}>
+                             <div className="flex items-center justify-between mb-2">
+                                <span className={`text-[9px] font-black uppercase tracking-widest ${
+                                    customer.churnRisk > 50 ? 'text-rose-500' : 'text-emerald-500'
+                                }`}>Churn Probability</span>
+                                {customer.churnRisk > 50 ? <AlertCircle className="w-4 h-4 text-rose-500" /> : <ShieldCheck className="w-4 h-4 text-emerald-500" />}
+                             </div>
+                             <div className="flex items-end gap-2">
+                                <span className={`text-3xl font-black ${
+                                    customer.churnRisk > 50 ? 'text-rose-600' : 'text-emerald-600'
+                                }`}>{customer.churnRisk}%</span>
+                                <span className="text-[10px] font-bold text-slate-400 mb-1">
+                                    {customer.riskTrend === 'UP' ? 'Trending Up' : 'Trending Down'}
+                                </span>
+                             </div>
+                        </div>
+
+                        <div className="p-5 rounded-2xl bg-white border border-slate-200 flex flex-col justify-between shadow-sm">
+                             <div className="flex items-center justify-between mb-2">
+                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Wallet Share</span>
+                                <Wallet className="w-4 h-4 text-indigo-500" />
+                             </div>
+                             <div className="flex items-end gap-2">
+                                <span className="text-3xl font-black text-slate-800">{customer.walletSharePct}%</span>
+                                <div className="h-1.5 w-16 bg-slate-100 rounded-full mb-2 overflow-hidden">
+                                    <div className="h-full bg-indigo-500" style={{ width: `${customer.walletSharePct}%` }}></div>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+
+                    {/* Portfolio Breakdown */}
+                    <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                                <PieChartIcon className="w-4 h-4 text-slate-400" /> Total AUM Breakdown
+                            </h3>
+                            <span className="text-xs font-black text-slate-800 bg-slate-100 px-2 py-1 rounded-lg">
+                                {formatIDR(totalAUM)}
+                            </span>
+                        </div>
+                        <div className="h-[200px] flex items-center justify-center">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RePieChart>
+                                    <Pie 
+                                        data={portfolioData} 
+                                        cx="50%" 
+                                        cy="50%" 
+                                        innerRadius={60} 
+                                        outerRadius={80} 
+                                        paddingAngle={5} 
+                                        dataKey="value"
+                                    >
+                                        {portfolioData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip formatter={(value: number | string) => formatIDR(Number(value))} />
+                                    <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 'bold' }} />
+                                </RePieChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+
+                    {/* AI Retention Strategy */}
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-indigo-600" />
+                            <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest">AI Retention Intelligence</h4>
+                        </div>
+                        
+                        <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-3">
+                            <div>
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Risk Factors</label>
+                                <div className="flex flex-wrap gap-2">
+                                    {customer.riskFactors.map((rf, i) => (
+                                        <span key={i} className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md">
+                                            {rf}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Behavioral Prediction</label>
+                                <p className="text-xs font-medium text-slate-700">{customer.lifeEventPrediction} detected. Persona identified as <span className="font-bold text-indigo-600">{customer.persona}</span>.</p>
+                            </div>
+
+                            <div className="pt-2">
+                                <label className="text-[9px] font-black text-emerald-500 uppercase tracking-widest block mb-1">Next Best Action</label>
+                                <div className="flex items-center gap-2 p-3 bg-white rounded-xl border border-emerald-100 text-emerald-700 text-xs font-bold shadow-sm">
+                                    <Target className="w-4 h-4" /> 
+                                    {customer.nba}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
+                         <button className="py-3.5 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100 flex items-center justify-center gap-2">
+                             <Phone className="w-4 h-4" /> Call Client
+                         </button>
+                         <button className="py-3.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+                             <Mail className="w-4 h-4" /> Email Offer
+                         </button>
+                         <button className="col-span-2 py-3.5 bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-100 flex items-center justify-center gap-2">
+                             <Zap className="w-4 h-4" /> Execute Retention Campaign
+                         </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export const CRMDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'ACQUISITION' | 'RETENTION'>('ACQUISITION');
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer360 | null>(null);
+  const [isGeneratingForecast, setIsGeneratingForecast] = useState(false);
+  const [showForecastResult, setShowForecastResult] = useState(false);
+
   const formatIDR = (val: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(val);
 
+  const handleGenerateForecast = () => {
+      setIsGeneratingForecast(true);
+      setTimeout(() => {
+          setIsGeneratingForecast(false);
+          setShowForecastResult(true);
+          setTimeout(() => setShowForecastResult(false), 4000);
+      }, 2000);
+  };
+
   return (
-    <div className="space-y-8 animate-fade-in pb-20">
+    <div className="space-y-8 animate-fade-in pb-20 relative">
+      {/* LEAD DETAIL PANEL OVERLAY */}
+      {selectedLead && (
+          <LeadDetailPanel lead={selectedLead} onClose={() => setSelectedLead(null)} />
+      )}
+
+      {/* CUSTOMER DETAIL PANEL OVERLAY */}
+      {selectedCustomer && (
+          <CustomerDetailPanel customer={selectedCustomer} onClose={() => setSelectedCustomer(null)} />
+      )}
+
+      {/* FORECAST TOAST/OVERLAY */}
+      {showForecastResult && (
+          <div className="fixed bottom-10 right-10 z-[70] bg-slate-900 text-white p-6 rounded-2xl shadow-2xl animate-slide-up flex items-center gap-4 max-w-sm border border-slate-800">
+              <div className="p-3 bg-emerald-500 rounded-full text-white">
+                  <TrendingUp className="w-6 h-6" />
+              </div>
+              <div>
+                  <h4 className="text-sm font-black uppercase tracking-wider mb-1">Forecast Ready</h4>
+                  <p className="text-xs text-slate-300">Retention simulation completed. +12% projected uplift with current strategy.</p>
+              </div>
+          </div>
+      )}
+
       {/* HEADER SECTION */}
       <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-5">
@@ -317,7 +643,10 @@ export const CRMDashboard: React.FC = () => {
                                         {formatIDR(lead.expectedValue)}
                                     </td>
                                     <td className="px-10 py-6 text-right">
-                                        <button className="p-3 bg-white border border-slate-200 text-slate-400 rounded-2xl hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-sm">
+                                        <button 
+                                            onClick={() => setSelectedLead(lead)}
+                                            className="p-3 bg-white border border-slate-200 text-slate-400 rounded-2xl hover:bg-indigo-600 hover:text-white hover:border-indigo-600 transition-all shadow-sm"
+                                        >
                                             <ArrowRightCircle className="w-5 h-5" />
                                         </button>
                                     </td>
@@ -375,7 +704,11 @@ export const CRMDashboard: React.FC = () => {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           {MOCK_CUSTOMERS.filter(c => c.churnRisk > 30).slice(0, 2).map(customer => (
-                              <div key={customer.id} className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm flex items-center justify-between group hover:border-rose-200 hover:shadow-xl transition-all">
+                              <div 
+                                key={customer.id} 
+                                onClick={() => setSelectedCustomer(customer)}
+                                className="bg-white border border-slate-100 rounded-[32px] p-6 shadow-sm flex items-center justify-between group hover:border-rose-200 hover:shadow-xl transition-all cursor-pointer"
+                              >
                                   <div className="flex items-center gap-4">
                                       <div className="w-12 h-12 rounded-2xl bg-rose-50 flex items-center justify-center text-rose-600 font-black text-lg border border-rose-100">
                                           {customer.name[0]}
@@ -384,7 +717,7 @@ export const CRMDashboard: React.FC = () => {
                                           <div className="text-sm font-black text-slate-800 leading-none mb-1">{customer.name}</div>
                                           <div className="flex items-center gap-1.5">
                                               <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Risk: {customer.churnRisk}%</span>
-                                              {customer.riskTrend === 'UP' ? <ArrowUpNarrowWide className="w-3.5 h-3.5 text-rose-500" /> : <ArrowDownNarrowWide className="w-3.5 h-3.5 text-emerald-500" />}
+                                              {customer.riskTrend === 'UP' ? <ArrowUpNarrowWide className="w-3.5 h-3.5 text-rose-500" /> : customer.riskTrend === 'DOWN' ? <ArrowDownNarrowWide className="w-3.5 h-3.5 text-emerald-500" /> : <Minus className="w-3.5 h-3.5 text-slate-300" />}
                                           </div>
                                       </div>
                                   </div>
@@ -421,7 +754,11 @@ export const CRMDashboard: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-8">
                   {MOCK_CUSTOMERS.map(cust => (
-                      <div key={cust.id} className="group bg-white border border-slate-100 rounded-[44px] p-8 shadow-sm hover:shadow-2xl hover:border-emerald-100 transition-all duration-700 flex flex-col relative overflow-hidden">
+                      <div 
+                        key={cust.id} 
+                        onClick={() => setSelectedCustomer(cust)}
+                        className="group bg-white border border-slate-100 rounded-[44px] p-8 shadow-sm hover:shadow-2xl hover:border-emerald-100 transition-all duration-700 flex flex-col relative overflow-hidden cursor-pointer"
+                      >
                           {/* Behavioral Background Indicator */}
                           <div className={`absolute top-0 right-0 p-12 opacity-[0.03] group-hover:scale-125 transition-transform duration-1000 ${cust.tier === 'Priority' ? 'text-indigo-600' : 'text-amber-500'}`}>
                               <Fingerprint className="w-48 h-48" />
@@ -530,7 +867,13 @@ export const CRMDashboard: React.FC = () => {
                                       <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{cust.wealthVelocity}</span>
                                   </div>
                               </div>
-                              <button className="p-4 bg-slate-900 text-white rounded-[24px] hover:bg-emerald-600 hover:scale-110 transition-all shadow-xl active:scale-95 group-hover:shadow-emerald-100">
+                              <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedCustomer(cust);
+                                }}
+                                className="p-4 bg-slate-900 text-white rounded-[24px] hover:bg-emerald-600 hover:scale-110 transition-all shadow-xl active:scale-95 group-hover:shadow-emerald-100"
+                              >
                                   <Maximize2 className="w-5 h-5" />
                               </button>
                           </div>
@@ -560,7 +903,7 @@ export const CRMDashboard: React.FC = () => {
                         ]} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                             <XAxis dataKey="tier" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: 'black', fill: '#64748b' }} />
-                            <YAxis axisLine={false} tickLine={false} tickFormatter={(v) => `Rp${v/1000000}M`} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                            <YAxis axisLine={false} tickLine={false} tickFormatter={(v: number) => `Rp${v/1000000}M`} tick={{ fontSize: 10, fontWeight: 'bold' }} />
                             <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.2)' }} />
                             <Legend iconType="circle" />
                             <Bar dataKey="Savings" fill="#6366f1" stackId="a" radius={[0, 0, 0, 0]} />
@@ -594,8 +937,12 @@ export const CRMDashboard: React.FC = () => {
                         </div>
                     ))}
                 </div>
-                <button className="w-full py-5 bg-slate-900 text-white rounded-[24px] text-[10px] font-black uppercase tracking-widest mt-8 flex items-center justify-center gap-2 hover:bg-indigo-600 transition-all shadow-xl shadow-slate-100 active:scale-95">
-                    Generate Segment Forecast <ArrowUpRight className="w-4 h-4" />
+                <button 
+                    onClick={handleGenerateForecast}
+                    disabled={isGeneratingForecast}
+                    className="w-full py-5 bg-slate-900 text-white rounded-[24px] text-[10px] font-black uppercase tracking-widest mt-8 flex items-center justify-center gap-2 hover:bg-indigo-600 transition-all shadow-xl shadow-slate-100 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                    {isGeneratingForecast ? <Loader2 className="w-4 h-4 animate-spin" /> : <><ArrowUpRight className="w-4 h-4" /> Generate Segment Forecast</>}
                 </button>
             </div>
           </div>

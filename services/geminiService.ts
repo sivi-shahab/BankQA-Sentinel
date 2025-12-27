@@ -1,6 +1,8 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { CallAnalysis, PiiSettings, DictionaryItem, FullDashboardContext } from "../types";
+
+// In-memory cache for avatars to prevent rate limiting (429)
+const avatarCache: Record<string, string> = {};
 
 const analysisSchema = {
   type: Type.OBJECT,
@@ -199,5 +201,49 @@ export const sendChatQuery = async (
   } catch (error) {
     console.error("Chat Error:", error);
     throw error;
+  }
+};
+
+export const generateAgentAvatar = async (name: string, skill: string): Promise<string> => {
+  const cacheKey = `${name}:${skill}`;
+  if (avatarCache[cacheKey]) {
+    return avatarCache[cacheKey];
+  }
+
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const prompt = `Generate a modern, abstract, geometric SVG icon code for a user avatar.
+    Name: ${name} (Use this for creative seed, do not put text in image).
+    Top Skill: ${skill}.
+    
+    Style Directions:
+    - Use specific shapes to represent the skill (e.g., 'Empathy' = soft circles/curves, 'Closing' = sharp triangles/arrows, 'Knowledge' = interconnected nodes).
+    - Color Palette: Corporate Fintech (Indigo #6366f1, Emerald #10b981, Slate #475569).
+    - Background: Transparent or subtle gradient.
+    - Format: Return ONLY the raw <svg>...</svg> string. No markdown code blocks.
+    - ViewBox: 0 0 100 100.
+    - Simplicity: High. Material Design inspired.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        temperature: 1.0 // High temperature for creativity
+      }
+    });
+
+    let svg = response.text || '';
+    // Clean up potential markdown code blocks if the model includes them
+    svg = svg.replace(/```xml/g, '').replace(/```svg/g, '').replace(/```/g, '').trim();
+    
+    if (svg && svg.includes('<svg')) {
+        avatarCache[cacheKey] = svg;
+    }
+
+    return svg;
+  } catch (error) {
+    console.error("Avatar Gen Error:", error);
+    // Fallback SVG if generation fails (don't cache failure to allow retry)
+    return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#cbd5e1"/><text x="50" y="65" font-size="40" text-anchor="middle" fill="white" font-family="sans-serif">${name.charAt(0)}</text></svg>`;
   }
 };
