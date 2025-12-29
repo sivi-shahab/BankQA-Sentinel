@@ -1,6 +1,7 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
 import { CallAnalysis, PiiSettings, DictionaryItem, FullDashboardContext } from "../types";
+import { logLLMTelemetry, startTrace, endTrace, estimateTokens } from "./datadogService";
 
 // In-memory cache for avatars to prevent rate limiting (429)
 const avatarCache: Record<string, string> = {};
@@ -154,8 +155,10 @@ export const analyzeTelemarketingAudio = async (
   dictionary: DictionaryItem[] = [],
   audioMimeType: string = 'audio/webm'
 ): Promise<CallAnalysis> => {
+  const startTime = startTrace();
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
+  const modelName = 'gemini-3-flash-preview';
+
   const performAnalysis = async () => {
     // Construct PII Redaction Instructions based on settings
     const piiInstructions = Object.entries(piiSettings)
@@ -205,23 +208,53 @@ export const analyzeTelemarketingAudio = async (
       });
     }
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: {
-        parts: [
-          { inlineData: { mimeType: audioMimeType, data: base64Audio } },
-          { text: systemPrompt }
-        ]
-      },
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: analysisSchema,
-        temperature: 0.1,
-      }
-    });
+    try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: {
+            parts: [
+              { inlineData: { mimeType: audioMimeType, data: base64Audio } },
+              { text: systemPrompt }
+            ]
+          },
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: analysisSchema,
+            temperature: 0.1,
+          }
+        });
 
-    if (!response.text) throw new Error("No response generated");
-    return JSON.parse(response.text.trim()) as CallAnalysis;
+        if (!response.text) throw new Error("No response generated");
+        const parsedResult = JSON.parse(response.text.trim()) as CallAnalysis;
+
+        // DATADOG TELEMETRY: SUCCESS
+        logLLMTelemetry({
+            model: modelName,
+            operation: 'audio_analysis',
+            durationMs: endTrace(startTime),
+            status: 'success',
+            tokensInputEstimate: estimateTokens(systemPrompt) + 2000, // + audio buffer estimate
+            tokensOutputEstimate: estimateTokens(response.text),
+            qualityScore: parsedResult.qualityScore,
+            sentiment: parsedResult.sentiment,
+            compliancePassRate: (parsedResult.complianceChecklist.filter(c => c.status === 'PASS').length / parsedResult.complianceChecklist.length) * 100
+        });
+
+        return parsedResult;
+
+    } catch (error: any) {
+        // DATADOG TELEMETRY: ERROR
+        logLLMTelemetry({
+            model: modelName,
+            operation: 'audio_analysis',
+            durationMs: endTrace(startTime),
+            status: 'error',
+            errorType: error.message || 'Unknown Gemini Error',
+            tokensInputEstimate: estimateTokens(systemPrompt),
+            tokensOutputEstimate: 0
+        });
+        throw error;
+    }
   };
 
   // Use retry logic
@@ -234,21 +267,48 @@ export const sendChatQuery = async (
   dashboardContext: FullDashboardContext,
   referenceText: string = ''
 ): Promise<string> => {
+  const startTime = startTrace();
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const modelName = 'gemini-3-pro-preview';
   
   const performChat = async () => {
-    const systemInstruction = `You are the ProofPoint.AI FinAI Intelligence Assistant.
-    You have absolute access to all data on the dashboard for deep context analysis.
-    `;
+    try {
+        const systemInstruction = `You are the ProofPoint.AI FinAI Intelligence Assistant.
+        You have absolute access to all data on the dashboard for deep context analysis.
+        `;
 
-    const chat = ai.chats.create({
-      model: 'gemini-3-pro-preview',
-      config: { systemInstruction },
-      history: history.map(h => ({ role: h.role, parts: [{ text: h.text }] }))
-    });
+        const chat = ai.chats.create({
+          model: modelName,
+          config: { systemInstruction },
+          history: history.map(h => ({ role: h.role, parts: [{ text: h.text }] }))
+        });
 
-    const result = await chat.sendMessage({ message: currentMessage });
-    return result.text || "No response.";
+        const result = await chat.sendMessage({ message: currentMessage });
+        const text = result.text || "No response.";
+
+        // DATADOG TELEMETRY
+        logLLMTelemetry({
+            model: modelName,
+            operation: 'chat_query',
+            durationMs: endTrace(startTime),
+            status: 'success',
+            tokensInputEstimate: estimateTokens(currentMessage) + estimateTokens(JSON.stringify(history)),
+            tokensOutputEstimate: estimateTokens(text)
+        });
+
+        return text;
+    } catch (error: any) {
+        logLLMTelemetry({
+            model: modelName,
+            operation: 'chat_query',
+            durationMs: endTrace(startTime),
+            status: 'error',
+            errorType: error.message,
+            tokensInputEstimate: estimateTokens(currentMessage),
+            tokensOutputEstimate: 0
+        });
+        throw error;
+    }
   };
 
   return retryOperation(performChat);
@@ -289,6 +349,7 @@ export const generateAgentAvatar = async (name: string, skill: string): Promise<
   }
 
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const modelName = 'gemini-3-flash-preview';
   
   const generate = async () => {
     const prompt = `Generate a modern, abstract, geometric SVG icon code for a user avatar.
@@ -303,23 +364,26 @@ export const generateAgentAvatar = async (name: string, skill: string): Promise<
     - ViewBox: 0 0 100 100.
     - Simplicity: High. Material Design inspired.`;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: prompt,
-      config: {
-        temperature: 1.0 // High temperature for creativity
-      }
-    });
+    try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: prompt,
+          config: {
+            temperature: 1.0 // High temperature for creativity
+          }
+        });
 
-    let svg = response.text || '';
-    svg = svg.replace(/```xml/g, '').replace(/```svg/g, '').replace(/```/g, '').trim();
-    
-    // Validate SVG simple check
-    if (svg && svg.includes('<svg')) {
-        avatarCache[cacheKey] = svg;
-        return svg;
+        let svg = response.text || '';
+        svg = svg.replace(/```xml/g, '').replace(/```svg/g, '').replace(/```/g, '').trim();
+        
+        if (svg && svg.includes('<svg')) {
+            avatarCache[cacheKey] = svg;
+            return svg;
+        }
+        throw new Error("Invalid SVG generated");
+    } catch (e: any) {
+        throw e;
     }
-    throw new Error("Invalid SVG generated");
   };
 
   try {
@@ -327,11 +391,10 @@ export const generateAgentAvatar = async (name: string, skill: string): Promise<
     // We limit retries to 1 for avatars to avoid blocking UI if quota is tight
     return await retryOperation(generate, 1, 1000);
   } catch (error: any) {
-    // Graceful Fallback: If Rate Limited or Error, return deterministic local SVG
-    // This fixes the 429 app crash loop
+    // Graceful Fallback
     console.warn(`Avatar generation for ${name} switched to fallback due to: ${error.message}`);
     const fallback = generateFallbackAvatar(name, skill);
-    avatarCache[cacheKey] = fallback; // Cache the fallback so we don't retry locally constantly
+    avatarCache[cacheKey] = fallback;
     return fallback;
   }
 };

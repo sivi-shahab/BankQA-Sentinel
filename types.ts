@@ -220,6 +220,20 @@ export interface TeamStats {
   competencyAverages: { subject: string; A: number; fullMark: number }[];
 }
 
+// TALK BOT TYPES
+export type BotCallStatus = 'SCHEDULED' | 'DIALING' | 'COMPLETED' | 'FAILED';
+
+export interface BotCall {
+  id: string;
+  customerName: string;
+  phoneNumber: string;
+  topic: string;
+  scheduledTime: Date;
+  status: BotCallStatus;
+  duration?: string;
+  result?: CallAnalysis; // The analysis of the bot's call
+}
+
 export interface FullDashboardContext {
   leads: Lead[];
   customers: Customer360[];
@@ -245,4 +259,4 @@ export enum AnalysisStatus {
   ERROR = 'ERROR'
 }
 
-export type AppView = 'WORKBENCH' | 'TEAM_ANALYTICS' | 'CRM_DASHBOARD' | 'MANAGEMENT' | 'AUDIT_TRAIL';
+export type AppView = 'WORKBENCH' | 'TEAM_ANALYTICS' | 'CRM_DASHBOARD' | 'MANAGEMENT' | 'AUDIT_TRAIL' | 'TALK_BOT';

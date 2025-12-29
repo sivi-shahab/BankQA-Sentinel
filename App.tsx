@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AudioRecorder } from './components/AudioRecorder';
 import { Dashboard } from './components/Dashboard';
@@ -11,6 +10,7 @@ import { ConversationResume } from './components/ConversationResume';
 import { CRMDashboard } from './components/CRMDashboard';
 import { AuditTrail } from './components/AuditTrail';
 import { CampaignManager } from './components/CampaignManager';
+import { TalkBot } from './components/TalkBot';
 import { analyzeTelemarketingAudio } from './services/geminiService';
 import { AnalysisStatus, CallAnalysis, AppView, PiiSettings, DictionaryItem, AuditLog, FullDashboardContext, KnowledgeDocument, Campaign } from './types';
 import { 
@@ -38,7 +38,8 @@ import {
   Globe,
   FileText,
   Sparkles,
-  Zap
+  Zap,
+  Bot
 } from 'lucide-react';
 
 // Shared Mock Data for Context Injection
@@ -294,6 +295,7 @@ const App: React.FC = () => {
       case 'WORKBENCH': return 'Audit Workbench';
       case 'TEAM_ANALYTICS': return 'Team Intelligence';
       case 'CRM_DASHBOARD': return 'CRM Intelligence';
+      case 'TALK_BOT': return 'TalkBot AI Manager';
       case 'MANAGEMENT': return 'Management Center';
       case 'AUDIT_TRAIL': return 'Compliance Audit Trail';
       default: return 'ProofPoint.AI';
@@ -319,6 +321,7 @@ const App: React.FC = () => {
           <NavItem view="WORKBENCH" icon={LayoutDashboard} label="Audit Workbench" />
           <NavItem view="TEAM_ANALYTICS" icon={Users2} label="Team Intelligence" />
           <NavItem view="CRM_DASHBOARD" icon={Database} label="CRM Intelligence" />
+          <NavItem view="TALK_BOT" icon={Bot} label="TalkBot AI" />
           <div className="pt-8 px-4 mb-4">
             <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Management</h2>
           </div>
@@ -401,7 +404,13 @@ const App: React.FC = () => {
               </div>
             </div>
           ) : currentView === 'CRM_DASHBOARD' ? (
-             <CRMDashboard campaigns={campaigns} />
+             <CRMDashboard campaigns={campaigns} crmStats={CRM_STATS} />
+          ) : currentView === 'TALK_BOT' ? (
+             <TalkBot 
+                customers={MOCK_CUSTOMERS as any} 
+                knowledgeDocs={knowledgeDocs} 
+                campaigns={campaigns}
+             />
           ) : currentView === 'AUDIT_TRAIL' ? (
              <div className="max-w-7xl mx-auto h-[calc(100vh-12rem)] pb-10">
                <AuditTrail logs={auditLogs} />
