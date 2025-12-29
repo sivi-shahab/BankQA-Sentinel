@@ -7,7 +7,7 @@ import {
   Clock, Mic2, X, Loader2, Signal, BookOpen,
   BrainCircuit, Database, Rocket,
   PieChart as PieChartIcon, ThumbsUp, ThumbsDown,
-  TrendingUp, BarChart3, ListFilter, User
+  TrendingUp, BarChart3, ListFilter, User, LayoutList
 } from 'lucide-react';
 import { BotCall, CallAnalysis, Customer360, KnowledgeDocument, Campaign } from '../types';
 import { Dashboard } from './Dashboard';
@@ -21,6 +21,7 @@ interface TalkBotProps {
 
 export const TalkBot: React.FC<TalkBotProps> = ({ customers, knowledgeDocs, campaigns }) => {
   const activeCampaign = campaigns.find(c => c.status === 'ACTIVE');
+  const [activeTab, setActiveTab] = useState<'SCHEDULE' | 'ANALYTICS'>('SCHEDULE');
   
   // Note: Knowledge logic is handled centrally. 
   // The bot simulation below uses 'activeCampaign' to demonstrate context awareness without needing to display the docs here.
@@ -306,34 +307,60 @@ export const TalkBot: React.FC<TalkBotProps> = ({ customers, knowledgeDocs, camp
           </div>
       )}
 
-      {/* HEADER */}
-      <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-5">
-              <div className="p-4 bg-cyan-500 text-white rounded-2xl shadow-lg shadow-cyan-200">
-                  <Bot className="w-8 h-8" />
-              </div>
-              <div>
-                  <h1 className="text-2xl font-black text-slate-800 tracking-tight">TalkBot AI Manager</h1>
-                  <p className="text-slate-500 font-medium text-sm">Automated Outbound Calling & Compliance</p>
-              </div>
+      {/* HEADER WITH TABS */}
+      <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm flex flex-col gap-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-5">
+                <div className="p-4 bg-cyan-500 text-white rounded-2xl shadow-lg shadow-cyan-200">
+                    <Bot className="w-8 h-8" />
+                </div>
+                <div>
+                    <h1 className="text-2xl font-black text-slate-800 tracking-tight">TalkBot AI Manager</h1>
+                    <p className="text-slate-500 font-medium text-sm">Automated Outbound Calling & Compliance</p>
+                </div>
+            </div>
+            <div className="flex gap-4">
+                <div className="px-5 py-2 bg-slate-900 text-white rounded-2xl flex flex-col items-center justify-center">
+                    <span className="text-lg font-black leading-none">{calls.filter(c => c.status === 'COMPLETED').length}</span>
+                    <span className="text-[8px] font-bold uppercase text-slate-400">Completed</span>
+                </div>
+                <button 
+                  onClick={() => setIsScheduling(true)}
+                  className="px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-cyan-100 transition-all"
+                >
+                    <Plus className="w-4 h-4" /> Schedule Call
+                </button>
+            </div>
           </div>
-          <div className="flex gap-4">
-              <div className="px-5 py-2 bg-slate-900 text-white rounded-2xl flex flex-col items-center justify-center">
-                  <span className="text-lg font-black leading-none">{calls.filter(c => c.status === 'COMPLETED').length}</span>
-                  <span className="text-[8px] font-bold uppercase text-slate-400">Completed</span>
-              </div>
+
+          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl w-fit">
               <button 
-                onClick={() => setIsScheduling(true)}
-                className="px-6 py-3 bg-cyan-600 hover:bg-cyan-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 shadow-lg shadow-cyan-100 transition-all"
+                onClick={() => setActiveTab('SCHEDULE')}
+                className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+                  activeTab === 'SCHEDULE' 
+                    ? 'bg-white text-cyan-600 shadow-sm' 
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50'
+                }`}
               >
-                  <Plus className="w-4 h-4" /> Schedule Call
+                 <LayoutList className="w-4 h-4" /> Call Schedule
+              </button>
+              <button 
+                onClick={() => setActiveTab('ANALYTICS')}
+                className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${
+                  activeTab === 'ANALYTICS' 
+                    ? 'bg-white text-cyan-600 shadow-sm' 
+                    : 'text-slate-400 hover:text-slate-600 hover:bg-slate-200/50'
+                }`}
+              >
+                 <PieChartIcon className="w-4 h-4" /> Outcome Analysis
               </button>
           </div>
       </div>
 
-      {/* NEW: ACQUISITION DASHBOARD */}
-      {completedCalls.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* TAB CONTENT: ANALYTICS */}
+      {activeTab === 'ANALYTICS' && (
+        completedCalls.length > 0 ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-slide-up">
               {/* Chart Section */}
               <div className="bg-white rounded-[32px] p-8 border border-slate-200 shadow-sm flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-4">
@@ -393,7 +420,7 @@ export const TalkBot: React.FC<TalkBotProps> = ({ customers, knowledgeDocs, camp
                               <h4 className="text-xs font-black text-emerald-700 uppercase tracking-widest">Successful Leads</h4>
                               <span className="ml-auto bg-emerald-200 text-emerald-700 text-[9px] font-black px-2 py-0.5 rounded-full">{successCount}</span>
                           </div>
-                          <div className="space-y-3 flex-1 overflow-y-auto max-h-[150px] custom-scrollbar pr-2">
+                          <div className="space-y-3 flex-1 overflow-y-auto max-h-[400px] custom-scrollbar pr-2">
                               {successfulCalls.length > 0 ? successfulCalls.map((call, idx) => (
                                   <div key={idx} className="flex gap-2 items-start p-2 bg-white/60 rounded-lg border border-emerald-100/50">
                                       <div className="mt-1 w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-[10px] font-black flex-shrink-0">
@@ -417,7 +444,7 @@ export const TalkBot: React.FC<TalkBotProps> = ({ customers, knowledgeDocs, camp
                               <h4 className="text-xs font-black text-rose-700 uppercase tracking-widest">Missed Opportunities</h4>
                               <span className="ml-auto bg-rose-200 text-rose-700 text-[9px] font-black px-2 py-0.5 rounded-full">{failCount}</span>
                           </div>
-                           <div className="space-y-3 flex-1 overflow-y-auto max-h-[150px] custom-scrollbar pr-2">
+                           <div className="space-y-3 flex-1 overflow-y-auto max-h-[400px] custom-scrollbar pr-2">
                               {failedCalls.length > 0 ? failedCalls.map((call, idx) => (
                                   <div key={idx} className="flex gap-2 items-start p-2 bg-white/60 rounded-lg border border-rose-100/50">
                                       <div className="mt-1 w-5 h-5 rounded-full bg-rose-100 flex items-center justify-center text-rose-600 text-[10px] font-black flex-shrink-0">
@@ -436,79 +463,90 @@ export const TalkBot: React.FC<TalkBotProps> = ({ customers, knowledgeDocs, camp
                   </div>
               </div>
           </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center p-20 bg-white rounded-[32px] border border-dashed border-slate-200 animate-fade-in">
+              <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                  <PieChartIcon className="w-8 h-8 text-slate-300" />
+              </div>
+              <h3 className="text-lg font-black text-slate-400">No Outcome Data</h3>
+              <p className="text-xs text-slate-300 font-bold mt-1">Wait for calls to complete to view analysis.</p>
+          </div>
+        )
       )}
 
-      {/* CALL LIST - FULL WIDTH */}
-      <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-              <h3 className="text-lg font-black text-slate-800">Call Schedule</h3>
-              <div className="flex items-center gap-2">
-                  <Search className="w-4 h-4 text-slate-400" />
-                  <input type="text" placeholder="Search schedule..." className="bg-transparent text-sm font-bold outline-none w-48" />
-              </div>
-          </div>
-          <div className="divide-y divide-slate-100 flex-1 overflow-y-auto custom-scrollbar min-h-[400px]">
-              {calls.sort((a,b) => b.scheduledTime.getTime() - a.scheduledTime.getTime()).map((call) => (
-                  <div key={call.id} className="p-6 hover:bg-slate-50 transition-all group flex items-center justify-between">
-                      <div className="flex items-center gap-6">
-                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${
-                              call.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600' :
-                              call.status === 'DIALING' ? 'bg-cyan-100 text-cyan-600' :
-                              'bg-slate-100 text-slate-400'
-                          }`}>
-                              {call.status === 'COMPLETED' ? <CheckCircle2 className="w-6 h-6" /> :
-                              call.status === 'DIALING' ? <PhoneForwarded className="w-6 h-6 animate-pulse" /> :
-                              <CalendarClock className="w-6 h-6" />
-                              }
-                          </div>
-                          <div>
-                              <div className="flex items-center gap-3 mb-1">
-                                  <h4 className="text-sm font-black text-slate-800">{call.customerName}</h4>
-                                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase border ${
-                                      call.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                      call.status === 'DIALING' ? 'bg-cyan-50 text-cyan-600 border-cyan-100' :
-                                      'bg-amber-50 text-amber-600 border-amber-100'
-                                  }`}>{call.status}</span>
-                              </div>
-                              <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
-                                  <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {call.phoneNumber}</span>
-                                  <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> {call.topic}</span>
-                                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {call.scheduledTime.toLocaleString()}</span>
-                              </div>
-                          </div>
-                      </div>
+      {/* TAB CONTENT: SCHEDULE */}
+      {activeTab === 'SCHEDULE' && (
+        <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden flex flex-col animate-slide-up">
+            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <h3 className="text-lg font-black text-slate-800">Call Schedule</h3>
+                <div className="flex items-center gap-2">
+                    <Search className="w-4 h-4 text-slate-400" />
+                    <input type="text" placeholder="Search schedule..." className="bg-transparent text-sm font-bold outline-none w-48" />
+                </div>
+            </div>
+            <div className="divide-y divide-slate-100 flex-1 overflow-y-auto custom-scrollbar min-h-[400px]">
+                {calls.sort((a,b) => b.scheduledTime.getTime() - a.scheduledTime.getTime()).map((call) => (
+                    <div key={call.id} className="p-6 hover:bg-slate-50 transition-all group flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${
+                                call.status === 'COMPLETED' ? 'bg-emerald-100 text-emerald-600' :
+                                call.status === 'DIALING' ? 'bg-cyan-100 text-cyan-600' :
+                                'bg-slate-100 text-slate-400'
+                            }`}>
+                                {call.status === 'COMPLETED' ? <CheckCircle2 className="w-6 h-6" /> :
+                                call.status === 'DIALING' ? <PhoneForwarded className="w-6 h-6 animate-pulse" /> :
+                                <CalendarClock className="w-6 h-6" />
+                                }
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-3 mb-1">
+                                    <h4 className="text-sm font-black text-slate-800">{call.customerName}</h4>
+                                    <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase border ${
+                                        call.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                        call.status === 'DIALING' ? 'bg-cyan-50 text-cyan-600 border-cyan-100' :
+                                        'bg-amber-50 text-amber-600 border-amber-100'
+                                    }`}>{call.status}</span>
+                                </div>
+                                <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
+                                    <span className="flex items-center gap-1"><Phone className="w-3 h-3" /> {call.phoneNumber}</span>
+                                    <span className="flex items-center gap-1"><FileText className="w-3 h-3" /> {call.topic}</span>
+                                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {call.scheduledTime.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        </div>
 
-                      <div className="flex items-center gap-4">
-                          {call.status === 'DIALING' && (
-                              <div className="flex items-center gap-2 text-cyan-600 text-xs font-black uppercase tracking-widest animate-pulse">
-                                  <Signal className="w-4 h-4" /> Dialing Now...
-                              </div>
-                          )}
-                          
-                          {call.status === 'SCHEDULED' && (
-                              <button 
-                                onClick={() => simulateCall(call.id)}
-                                className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-600 transition-all flex items-center gap-2"
-                              >
-                                  <Play className="w-3 h-3" /> Force Start
-                              </button>
-                          )}
+                        <div className="flex items-center gap-4">
+                            {call.status === 'DIALING' && (
+                                <div className="flex items-center gap-2 text-cyan-600 text-xs font-black uppercase tracking-widest animate-pulse">
+                                    <Signal className="w-4 h-4" /> Dialing Now...
+                                </div>
+                            )}
+                            
+                            {call.status === 'SCHEDULED' && (
+                                <button 
+                                  onClick={() => simulateCall(call.id)}
+                                  className="px-4 py-2 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-cyan-600 transition-all flex items-center gap-2"
+                                >
+                                    <Play className="w-3 h-3" /> Force Start
+                                </button>
+                            )}
 
-                          {call.status === 'COMPLETED' && (
-                              <button 
-                                onClick={() => setSelectedResult(call.result!)}
-                                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center gap-2"
-                              >
-                                  View Audit <ArrowRight className="w-3 h-3" />
-                              </button>
-                          )}
-                          
-                          <button className="p-2 text-slate-300 hover:text-slate-500"><MoreHorizontal className="w-5 h-5" /></button>
-                      </div>
-                  </div>
-              ))}
-          </div>
-      </div>
+                            {call.status === 'COMPLETED' && (
+                                <button 
+                                  onClick={() => setSelectedResult(call.result!)}
+                                  className="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center gap-2"
+                                >
+                                    View Audit <ArrowRight className="w-3 h-3" />
+                                </button>
+                            )}
+                            
+                            <button className="p-2 text-slate-300 hover:text-slate-500"><MoreHorizontal className="w-5 h-5" /></button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+      )}
     </div>
   );
 };
