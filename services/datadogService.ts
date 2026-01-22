@@ -7,7 +7,7 @@ import { datadogLogs, StatusType } from '@datadog/browser-logs';
 const DD_CLIENT_TOKEN = process.env.DD_CLIENT_TOKEN || 'pub1234567890abcdef'; 
 const DD_APPLICATION_ID = process.env.DD_APPLICATION_ID || 'app-123-456';
 const DD_SITE = 'datadoghq.com';
-const SERVICE_NAME = 'proofpoint-ai-gemini';
+const SERVICE_NAME = 'hypatix-ai-gemini';
 
 let isInitialized = false;
 

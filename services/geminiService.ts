@@ -273,7 +273,7 @@ export const sendChatQuery = async (
   
   const performChat = async () => {
     try {
-        const systemInstruction = `You are the ProofPoint.AI FinAI Intelligence Assistant.
+        const systemInstruction = `You are the Hypatix.AI FinAI Intelligence Assistant.
         You have absolute access to all data on the dashboard for deep context analysis.
         `;
 

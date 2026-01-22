@@ -9,10 +9,12 @@ import {
   Coins, HandCoins, CalendarDays, Percent, Wallet, Tag,
   AlertCircle, FileCheck, Lock as LockIcon, Timer, 
   MessageSquare, Users, BarChart3, Fingerprint,
-  Users2
+  Users2, Download, Printer
 } from 'lucide-react';
 import { CallAnalysis } from '../types';
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis, PieChart, Pie, Cell } from 'recharts';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface DashboardProps {
   data: CallAnalysis;
@@ -68,6 +70,130 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     }, 1500);
   };
 
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+
+    // --- Header ---
+    doc.setFontSize(22);
+    doc.setTextColor(79, 70, 229); // Indigo 600
+    doc.setFont("helvetica", "bold");
+    doc.text("Hypatix.AI | Audit Report", 14, 20);
+
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 26);
+    doc.text(`Audit ID: ${Math.random().toString(36).substr(2, 9).toUpperCase()}`, 14, 31);
+
+    // --- Score Summary Box ---
+    doc.setFillColor(248, 250, 252); // Slate 50
+    doc.setDrawColor(226, 232, 240); // Slate 200
+    doc.roundedRect(14, 40, pageWidth - 28, 25, 3, 3, 'FD');
+
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Quality Score: ${data.qualityScore}/100`, 20, 50);
+    doc.text(`Sentiment: ${data.sentiment}`, 20, 58);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`WPM: ${data.conversationStats.wordsPerMinute}`, 80, 50);
+    doc.text(`Interruptions: ${data.conversationStats.interruptionCount}`, 80, 58);
+    doc.text(`Agent Talk: ${data.conversationStats.agentTalkTimePct}%`, 140, 50);
+    doc.text(`Customer Talk: ${data.conversationStats.customerTalkTimePct}%`, 140, 58);
+
+    let finalY = 75;
+
+    // --- Extracted Intelligence ---
+    doc.setFontSize(14);
+    doc.setTextColor(79, 70, 229);
+    doc.setFont("helvetica", "bold");
+    doc.text("Extracted Intelligence & CRM Data", 14, finalY);
+    
+    const infoBody = Object.entries(data.extractedInfo).map(([key, value]) => [
+        key.replace(/([A-Z])/g, ' $1').trim().replace(/^./, str => str.toUpperCase()), 
+        String(value)
+    ]);
+
+    autoTable(doc, {
+        startY: finalY + 5,
+        head: [['Field', 'Value']],
+        body: infoBody,
+        theme: 'grid',
+        headStyles: { fillColor: [79, 70, 229], fontStyle: 'bold' },
+        styles: { fontSize: 9, cellPadding: 3 },
+        alternateRowStyles: { fillColor: [249, 250, 251] }
+    });
+
+    // @ts-ignore
+    finalY = doc.lastAutoTable.finalY + 15;
+
+    // --- Compliance Audit ---
+    doc.setFontSize(14);
+    doc.setTextColor(79, 70, 229);
+    doc.text("Compliance Audit Checklist", 14, finalY);
+
+    const complianceBody = data.complianceChecklist.map(c => [c.category, c.status, c.details]);
+
+    autoTable(doc, {
+        startY: finalY + 5,
+        head: [['Category', 'Status', 'Details']],
+        body: complianceBody,
+        theme: 'striped',
+        headStyles: { fillColor: [16, 185, 129] }, // Emerald
+        styles: { fontSize: 9 },
+        columnStyles: { 
+            0: { fontStyle: 'bold', cellWidth: 50 },
+            1: { fontStyle: 'bold', cellWidth: 25 }
+        },
+        didParseCell: (data) => {
+            if (data.section === 'body' && data.column.index === 1) {
+                if (data.cell.raw === 'PASS') data.cell.styles.textColor = [16, 185, 129];
+                if (data.cell.raw === 'FAIL') data.cell.styles.textColor = [239, 68, 68];
+                if (data.cell.raw === 'WARNING') data.cell.styles.textColor = [245, 158, 11];
+            }
+        }
+    });
+
+    // @ts-ignore
+    finalY = doc.lastAutoTable.finalY + 15;
+
+    // --- Transcript ---
+    // Check if we need a new page for transcript header
+    if (finalY > 250) {
+        doc.addPage();
+        finalY = 20;
+    }
+
+    doc.setFontSize(14);
+    doc.setTextColor(79, 70, 229);
+    doc.text("Verified Transcript", 14, finalY);
+
+    const transcriptBody = data.transcriptSegments.map(s => [s.timestamp || '', s.speaker, s.text]);
+
+    autoTable(doc, {
+        startY: finalY + 5,
+        head: [['Time', 'Speaker', 'Text']],
+        body: transcriptBody,
+        theme: 'plain',
+        styles: { fontSize: 9, cellPadding: 2, valign: 'top' },
+        columnStyles: { 
+            0: { textColor: 100, cellWidth: 20 },
+            1: { fontStyle: 'bold', cellWidth: 30 }, 
+            2: { cellWidth: 'auto' } 
+        },
+        didParseCell: (data) => {
+             if (data.section === 'body' && data.column.index === 1) {
+                 if (String(data.cell.raw).includes('Agent')) data.cell.styles.textColor = [79, 70, 229];
+                 else data.cell.styles.textColor = [16, 185, 129];
+             }
+        }
+    });
+
+    doc.save(`Hypatix_Audit_${data.extractedInfo.customerName.replace(/\s+/g, '_')}.pdf`);
+  };
+
   const getVerdictStyles = (verdict: string) => {
     switch (verdict) {
         case 'STAR_PERFORMER': return 'bg-emerald-500 text-white shadow-emerald-200';
@@ -87,11 +213,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
   return (
     <div className="space-y-6 animate-fade-in font-sans pb-10">
       
+      {/* 0. HEADER ACTIONS */}
+      <div className="flex justify-end gap-3 mb-2">
+          <button 
+             onClick={handleDownloadPDF}
+             className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg hover:shadow-slate-200 active:scale-95"
+          >
+             <Download className="w-4 h-4" /> Download Report
+          </button>
+      </div>
+
       {/* 1. KEY QUALITY METRICS */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="md:col-span-2 bg-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden flex items-center justify-between border border-slate-800">
            <div className="relative z-10">
-              <h2 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">ProofScore Quality Audit</h2>
+              <h2 className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-2">HypatixScore Quality Audit</h2>
               <div className="flex items-end gap-3">
                  <span className="text-6xl font-black tracking-tighter">{data.qualityScore}</span>
                  <span className="text-xl text-slate-500 font-bold mb-2">/100</span>
@@ -426,7 +562,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
                     >
                         {isExporting ? <Loader2 className="w-5 h-5 animate-spin" /> : exportSuccess ? <CheckCircle2 className="w-5 h-5" /> : <><ExternalLink className="w-5 h-5" /> COMMIT TO CRM</>}
                     </button>
-                    <p className="text-[8px] text-center text-slate-300 mt-4 font-black tracking-widest uppercase">Secured by ProofPoint.AI</p>
+                    <p className="text-[8px] text-center text-slate-300 mt-4 font-black tracking-widest uppercase">Secured by Hypatix.AI</p>
                 </div>
             </div>
         </div>
