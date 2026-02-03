@@ -28,11 +28,10 @@ export const Login: React.FC<LoginProps> = ({ onLogin }) => {
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
         
         {/* Header / Brand Area */}
-        <div className="bg-indigo-600 p-10 text-center relative overflow-hidden">
-             <div className="absolute inset-0 bg-gradient-to-tr from-indigo-800 to-indigo-500 opacity-90"></div>
+        <div className="bg-gradient-to-tr from-indigo-600 to-violet-600 p-10 text-center relative overflow-hidden">
              {/* Decorative circles */}
              <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-1/2 -translate-y-1/2 blur-2xl"></div>
-             <div className="absolute bottom-0 right-0 w-32 h-32 bg-blue-500/30 rounded-full translate-x-1/3 translate-y-1/3 blur-2xl"></div>
+             <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/20 rounded-full translate-x-1/3 translate-y-1/3 blur-2xl"></div>
 
              <div className="relative z-10 flex flex-col items-center">
                 <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm mb-4 border border-white/20 shadow-lg">

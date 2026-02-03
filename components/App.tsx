@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AudioRecorder } from './components/AudioRecorder';
 import { Dashboard } from './components/Dashboard';
@@ -12,7 +13,7 @@ import { AuditTrail } from './components/AuditTrail';
 import { CampaignManager } from './components/CampaignManager';
 import { TalkBot } from './components/TalkBot';
 import { analyzeTelemarketingAudio } from './services/geminiService';
-import { AnalysisStatus, CallAnalysis, AppView, PiiSettings, DictionaryItem, AuditLog, FullDashboardContext, KnowledgeDocument, Campaign } from './types';
+import { AnalysisStatus, CallAnalysis, AppView, PiiSettings, DictionaryItem, AuditLog, FullDashboardContext, KnowledgeDocument, Campaign, AudioSegment } from './types';
 import { 
   ShieldCheck, 
   LayoutDashboard, 
@@ -226,16 +227,15 @@ const App: React.FC = () => {
     setAuditLogs(prev => [newLog, ...prev]);
   };
 
-  const handleAudioReady = async (base64Audio: string, mimeType?: string) => {
+  const handleAudioReady = async (audioSegments: AudioSegment[]) => {
     setStatus(AnalysisStatus.PROCESSING);
-    addAuditLog('CALL_ANALYSIS_STARTED', 'Voice Recording Binary');
+    addAuditLog('CALL_ANALYSIS_STARTED', `Batch Processing ${audioSegments.length} Segments`);
     try {
       const result = await analyzeTelemarketingAudio(
-        base64Audio, 
+        audioSegments, 
         piiSettings, 
         aggregatedContext, 
-        dictionary,
-        mimeType || 'audio/webm'
+        dictionary
       );
       setAnalysisResult(result);
       setStatus(AnalysisStatus.COMPLETE);
@@ -312,7 +312,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <h1 className="text-sm font-black text-slate-800 tracking-tight leading-none mb-1">HYPATIX.AI</h1>
-              <span className="bg-indigo-50 text-indigo-600 text-[9px] px-2 py-0.5 rounded-full border border-indigo-100 uppercase tracking-widest font-black">FinAI PRO</span>
+              <span className="bg-indigo-50 text-indigo-600 text-[9px] px-2 py-0.5 rounded-full border border-indigo-100 uppercase tracking-widest font-black">Voice Agent</span>
             </div>
           </div>
         </div>

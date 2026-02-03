@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type } from "@google/genai";
-import { CallAnalysis, PiiSettings, DictionaryItem, FullDashboardContext } from "../types";
+import { CallAnalysis, PiiSettings, DictionaryItem, FullDashboardContext, AudioSegment } from "../types";
 import { logLLMTelemetry, startTrace, endTrace, estimateTokens } from "./datadogService";
 
 // In-memory cache for avatars to prevent rate limiting (429)
@@ -149,11 +149,10 @@ const analysisSchema = {
 };
 
 export const analyzeTelemarketingAudio = async (
-  base64Audio: string, 
+  audioSegments: AudioSegment[], 
   piiSettings: PiiSettings, 
   referenceText: string = '', 
-  dictionary: DictionaryItem[] = [],
-  audioMimeType: string = 'audio/webm'
+  dictionary: DictionaryItem[] = []
 ): Promise<CallAnalysis> => {
   const startTime = startTrace();
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -178,7 +177,9 @@ export const analyzeTelemarketingAudio = async (
       .filter(s => s !== '')
       .join('\n');
 
-    let systemPrompt = `You are a Senior Quality Control Auditor for a major bank. Analyze this telemarketing call recording.
+    let systemPrompt = `You are a Senior Quality Control Auditor for a major bank. Analyze the provided audio segments. 
+    If multiple audio files are provided, treat them as a sequential conversation or related parts of the same interaction. Combine their context.
+    
     1. Transcribe accurately with speaker labels (Agent vs Customer).
     2. Evaluation Metrics:
        - Calculate exact Talk Time percentages for both speakers.
@@ -209,13 +210,16 @@ export const analyzeTelemarketingAudio = async (
     }
 
     try {
+        // Construct multipart content with all audio segments
+        const contentParts: any[] = audioSegments.map(seg => ({
+            inlineData: { mimeType: seg.mimeType, data: seg.data }
+        }));
+        contentParts.push({ text: systemPrompt });
+
         const response = await ai.models.generateContent({
           model: modelName,
           contents: {
-            parts: [
-              { inlineData: { mimeType: audioMimeType, data: base64Audio } },
-              { text: systemPrompt }
-            ]
+            parts: contentParts
           },
           config: {
             responseMimeType: "application/json",
@@ -233,7 +237,7 @@ export const analyzeTelemarketingAudio = async (
             operation: 'audio_analysis',
             durationMs: endTrace(startTime),
             status: 'success',
-            tokensInputEstimate: estimateTokens(systemPrompt) + 2000, // + audio buffer estimate
+            tokensInputEstimate: estimateTokens(systemPrompt) + (audioSegments.length * 2000), // Estimate
             tokensOutputEstimate: estimateTokens(response.text),
             qualityScore: parsedResult.qualityScore,
             sentiment: parsedResult.sentiment,

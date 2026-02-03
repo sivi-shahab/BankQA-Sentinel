@@ -12,7 +12,7 @@ import { AuditTrail } from './components/AuditTrail';
 import { CampaignManager } from './components/CampaignManager';
 import { TalkBot } from './components/TalkBot';
 import { analyzeTelemarketingAudio } from './services/geminiService';
-import { AnalysisStatus, CallAnalysis, AppView, PiiSettings, DictionaryItem, AuditLog, FullDashboardContext, KnowledgeDocument, Campaign } from './types';
+import { AnalysisStatus, CallAnalysis, AppView, PiiSettings, DictionaryItem, AuditLog, FullDashboardContext, KnowledgeDocument, Campaign, AudioSegment } from './types';
 import { 
   ShieldCheck, 
   LayoutDashboard, 
@@ -226,21 +226,21 @@ const App: React.FC = () => {
     setAuditLogs(prev => [newLog, ...prev]);
   };
 
-  const handleAudioReady = async (base64Audio: string, mimeType?: string) => {
+  const handleAudioReady = async (audioSegments: AudioSegment[]) => {
     setStatus(AnalysisStatus.PROCESSING);
-    addAuditLog('CALL_ANALYSIS_STARTED', 'Voice Recording Binary');
+    addAuditLog('CALL_ANALYSIS_STARTED', `Processing ${audioSegments.length} audio segments`);
     try {
       const result = await analyzeTelemarketingAudio(
-        base64Audio, 
+        audioSegments, 
         piiSettings, 
         aggregatedContext, 
-        dictionary,
-        mimeType || 'audio/webm'
+        dictionary
       );
       setAnalysisResult(result);
       setStatus(AnalysisStatus.COMPLETE);
       addAuditLog('CALL_ANALYSIS_COMPLETE', `Audit Score: ${result.qualityScore}`);
     } catch (error) {
+      console.error(error);
       setStatus(AnalysisStatus.ERROR);
       addAuditLog('CALL_ANALYSIS_FAILED', 'Service Error', 'CRITICAL');
     }
@@ -249,7 +249,7 @@ const App: React.FC = () => {
   const togglePii = (key: keyof PiiSettings) => {
     const newVal = !piiSettings[key];
     setPiiSettings(prev => ({ ...prev, [key]: newVal }));
-    addAuditLog('PRIVACY_SETTING_TOGGLED', `${key} -> ${newVal}`, 'WARNING');
+    addAuditLog('PRIVACY_SETTING_TOGGLED', `${String(key)} -> ${newVal}`, 'WARNING');
   };
 
   const addDictionaryItem = () => {
@@ -298,7 +298,7 @@ const App: React.FC = () => {
       case 'TALK_BOT': return 'TalkBot AI Manager';
       case 'MANAGEMENT': return 'Management Center';
       case 'AUDIT_TRAIL': return 'Compliance Audit Trail';
-      default: return 'ProofPoint.AI';
+      default: return 'Hypatix.AI';
     }
   };
 
@@ -311,8 +311,8 @@ const App: React.FC = () => {
               <ShieldCheck className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-sm font-black text-slate-800 tracking-tight leading-none mb-1">PROOFPOINT.AI</h1>
-              <span className="bg-indigo-50 text-indigo-600 text-[9px] px-2 py-0.5 rounded-full border border-indigo-100 uppercase tracking-widest font-black">FinAI PRO</span>
+              <h1 className="text-sm font-black text-slate-800 tracking-tight leading-none mb-1">HYPATIX.AI</h1>
+              <span className="bg-indigo-50 text-indigo-600 text-[9px] px-2 py-0.5 rounded-full border border-indigo-100 uppercase tracking-widest font-black">Voice Agent</span>
             </div>
           </div>
         </div>

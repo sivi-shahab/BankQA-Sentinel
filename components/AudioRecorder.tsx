@@ -1,10 +1,9 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Loader2, UploadCloud, Shield, Lock as LockIcon, EyeOff, Cpu, Activity, Zap, ShieldCheck, Sparkles } from 'lucide-react';
-import { AnalysisStatus } from '../types';
+import { Mic, Square, Loader2, UploadCloud, Shield, Lock as LockIcon, EyeOff, Cpu, Activity, Zap, ShieldCheck, Sparkles, Plus, Trash2, FileAudio, Play } from 'lucide-react';
+import { AnalysisStatus, AudioSegment } from '../types';
 
 interface AudioRecorderProps {
-  onAudioReady: (base64Audio: string, mimeType?: string) => void;
+  onAudioReady: (audioSegments: AudioSegment[]) => void;
   status: AnalysisStatus;
 }
 
@@ -12,6 +11,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
   const [processStep, setProcessStep] = useState(0);
+  const [audioQueue, setAudioQueue] = useState<AudioSegment[]>([]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
@@ -61,7 +61,14 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
         reader.onloadend = () => {
           const base64String = reader.result as string;
           const base64Data = base64String.split(',')[1];
-          onAudioReady(base64Data, mimeType);
+          
+          const newSegment: AudioSegment = {
+              id: Math.random().toString(36).substr(2, 9),
+              data: base64Data,
+              mimeType: mimeType,
+              label: `Recording ${new Date().toLocaleTimeString()}`
+          };
+          setAudioQueue(prev => [...prev, newSegment]);
         };
         stream.getTracks().forEach(track => track.stop());
       };
@@ -84,6 +91,40 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+
+      Array.from(files).forEach((file: File) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+              const base64String = reader.result as string;
+              const base64Data = base64String.split(',')[1];
+              const newSegment: AudioSegment = {
+                  id: Math.random().toString(36).substr(2, 9),
+                  data: base64Data,
+                  mimeType: file.type,
+                  label: file.name
+              };
+              setAudioQueue(prev => [...prev, newSegment]);
+          };
+          reader.readAsDataURL(file);
+      });
+      
+      // Reset input
+      e.target.value = '';
+  };
+
+  const removeSegment = (id: string) => {
+      setAudioQueue(prev => prev.filter(s => s.id !== id));
+  };
+
+  const handleAnalyze = () => {
+      if (audioQueue.length > 0) {
+          onAudioReady(audioQueue);
+      }
   };
 
   const formatTime = (seconds: number) => {
@@ -129,7 +170,7 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
              </div>
              <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-indigo-600 transition-all duration-1000 ease-in-out shadow-[0_0_10px_rgba(79,70,229,0.5)]" 
+                  className="h-full bg-indigo-600 transition-all duration-1000 ease-in-out shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
                   style={{ width: `${((processStep + 1) / processingSteps.length) * 100}%` }}
                 ></div>
              </div>
@@ -143,6 +184,8 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
       )}
 
       <div className={`space-y-6 transition-all duration-500 ${isProcessing ? 'blur-md opacity-20 pointer-events-none scale-95' : ''}`}>
+        
+        {/* RECORDER AREA */}
         <div className="flex flex-col items-center">
           <div className="relative group mb-4">
             {isRecording ? (
@@ -173,30 +216,63 @@ export const AudioRecorder: React.FC<AudioRecorderProps> = ({ onAudioReady, stat
           </div>
         </div>
         
+        {/* INPUT ACTIONS */}
         <div className="space-y-3">
-          <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-indigo-600" />
-              <span className="text-[10px] font-black text-indigo-800 uppercase tracking-widest leading-none">Global Privacy Rules Applied</span>
-          </div>
-
           {!isRecording && (
-            <label className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`}>
-                <UploadCloud className="w-4 h-4" />
-                UPLOAD RECORDING
-                <input type="file" className="hidden" accept="audio/*" onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const base64Data = (reader.result as string).split(',')[1];
-                            onAudioReady(base64Data, file.type);
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                }} />
-            </label>
+            <div className="grid grid-cols-1 gap-2">
+                <label className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all cursor-pointer ${isProcessing ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <UploadCloud className="w-4 h-4" />
+                    ADD AUDIO FILES
+                    <input type="file" className="hidden" accept="audio/*" multiple onChange={handleFileUpload} />
+                </label>
+            </div>
           )}
         </div>
+
+        {/* AUDIO QUEUE */}
+        {audioQueue.length > 0 && (
+            <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 max-h-48 overflow-y-auto custom-scrollbar">
+                <div className="flex justify-between items-center mb-2 px-1">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Queue ({audioQueue.length})</span>
+                    <button onClick={() => setAudioQueue([])} className="text-[10px] text-red-400 hover:text-red-600 font-bold">Clear All</button>
+                </div>
+                <div className="space-y-2">
+                    {audioQueue.map((seg) => (
+                        <div key={seg.id} className="flex items-center justify-between p-2.5 bg-white rounded-xl border border-slate-100 shadow-sm">
+                            <div className="flex items-center gap-3 overflow-hidden">
+                                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                                    <FileAudio className="w-3.5 h-3.5" />
+                                </div>
+                                <span className="text-xs font-bold text-slate-700 truncate max-w-[150px]">{seg.label}</span>
+                            </div>
+                            <button onClick={() => removeSegment(seg.id)} className="text-slate-300 hover:text-red-500 transition-colors">
+                                <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {/* MAIN ACTION BUTTON */}
+        <button 
+            onClick={handleAnalyze}
+            disabled={audioQueue.length === 0 || isProcessing}
+            className={`w-full py-4 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${
+                audioQueue.length > 0 
+                ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-emerald-200 active:scale-95' 
+                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+            }`}
+        >
+            <Play className="w-4 h-4 fill-current" /> 
+            ANALYZE BATCH ({audioQueue.length})
+        </button>
+
+        <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 flex items-center gap-2">
+            <Shield className="w-4 h-4 text-indigo-600" />
+            <span className="text-[10px] font-black text-indigo-800 uppercase tracking-widest leading-none">Global Privacy Rules Applied</span>
+        </div>
+
       </div>
     </div>
   );

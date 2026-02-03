@@ -31,8 +31,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
   };
 
   const talkTimeData = [
-    { name: 'Agent', value: data.conversationStats.agentTalkTimePct, fill: '#6366f1' },
-    { name: 'Customer', value: data.conversationStats.customerTalkTimePct, fill: '#10b981' }
+    { name: 'Agent', value: data.conversationStats.agentTalkTimePct, fill: '#6366f1' }, // Indigo 500
+    { name: 'Customer', value: data.conversationStats.customerTalkTimePct, fill: '#10b981' } // Emerald 500
   ];
 
   const crmFields = [
@@ -76,7 +76,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
 
     // --- Header ---
     doc.setFontSize(22);
-    doc.setTextColor(79, 70, 229); // Indigo 600
+    doc.setTextColor(99, 102, 241); // Indigo 500
     doc.setFont("helvetica", "bold");
     doc.text("Hypatix.AI | Audit Report", 14, 20);
 
@@ -107,7 +107,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
 
     // --- Extracted Intelligence ---
     doc.setFontSize(14);
-    doc.setTextColor(79, 70, 229);
+    doc.setTextColor(79, 70, 229); // Indigo 600
     doc.setFont("helvetica", "bold");
     doc.text("Extracted Intelligence & CRM Data", 14, finalY);
     
@@ -123,7 +123,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
         theme: 'grid',
         headStyles: { fillColor: [79, 70, 229], fontStyle: 'bold' },
         styles: { fontSize: 9, cellPadding: 3 },
-        alternateRowStyles: { fillColor: [249, 250, 251] }
+        alternateRowStyles: { fillColor: [238, 242, 255] } // Indigo 50
     });
 
     // @ts-ignore
@@ -217,7 +217,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       <div className="flex justify-end gap-3 mb-2">
           <button 
              onClick={handleDownloadPDF}
-             className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg hover:shadow-slate-200 active:scale-95"
+             className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg hover:shadow-indigo-200 active:scale-95"
           >
              <Download className="w-4 h-4" /> Download Report
           </button>

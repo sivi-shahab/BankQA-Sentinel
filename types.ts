@@ -251,6 +251,13 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+export interface AudioSegment {
+  id: string;
+  data: string; // base64 encoded string
+  mimeType: string;
+  label: string;
+}
+
 export enum AnalysisStatus {
   IDLE = 'IDLE',
   RECORDING = 'RECORDING',
